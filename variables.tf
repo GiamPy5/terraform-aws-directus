@@ -90,6 +90,7 @@ variable "admin_password" {
   description = "The password of the admin user (if empty, it will be generated automatically)"
   type        = string
   default     = ""
+  sensitive   = true
 }
 
 variable "healthcheck_path" {
