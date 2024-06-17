@@ -14,6 +14,7 @@ This Terraform module deploys Directus on an AWS Fargate ECS cluster.
 
 - Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
 - Implement Amazon Cognito authentication
+- HTTPS support
 
 ## Prerequisites
 
