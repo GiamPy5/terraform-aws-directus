@@ -6,7 +6,7 @@ This Terraform module deploys Directus on an AWS Fargate ECS cluster.
 
 ```hcl
 module "directus" {
-  source = "./.."
+  source  = "GiamPy5/directus/aws"
 
   application_name = local.name                # Change this to your application name
   admin_email      = "fake-email@email.com"    # Change this to your email address
@@ -19,24 +19,44 @@ module "directus" {
   cpu    = 1024
   memory = 2048
 
+  ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
+  enable_ses_emails_sending          = true
+  force_new_ecs_deployment_on_apply  = true
+
+  # Add additional custom configuration here (https://docs.directus.io/self-hosted/config-options.html#configuration-options)
+  additional_configuration = {
+    "LOG_LEVEL" = "debug"
+  }
+
   rds_database_name                         = "database_name"
   rds_database_host                         = "database_host"
-  rds_database_port                         = "database_port
+  rds_database_port                         = "database_port"
   rds_database_engine                       = "database_engine"
-  rds_database_username                     = "database_username
+  rds_database_username                     = "database_username"
   rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
+
+  redis_host = module.elasticache.cluster_cache_nodes[0].address
+  redis_port = module.elasticache.cluster_cache_nodes[0].port
 
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-  healthcheck_path = "/server/ping"
-  image_tag        = "latest" # It's HIGHLY RECOMMENDED to specify an image tag instead of relying on "latest" as it could trigger unwanted updates.
+  healthcheck_path = "/server/health"
+  image_tag        = "10.12"
+
+  autoscaling = {
+    enable           = true
+    cpu_threshold    = 60
+    memory_threshold = 80
+    min_capacity     = 1
+    max_capacity     = 2
+  }
 
   tags = {
     Application = "Directus"
     Environment = "Test"
   } # Change these tags to your prefered tags
-}
+
 ```
 
 For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
