@@ -1,0 +1,83 @@
+formatter: "markdown"
+
+output:
+  file: "README.md"
+  mode: replace
+  template: |-
+    # Terraform AWS Directus Module
+
+    This Terraform module deploys Directus on an AWS Fargate ECS cluster.
+
+    ## Features
+
+    - Easy deployment of Directus on AWS Fargate ECS
+    - Automatic scaling and load balancing
+    - Highly available and fault-tolerant architecture
+    - Customizable configuration options
+    - S3 integration for static assets
+
+    ## To-Be-Done
+
+    - Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
+    - Implement Amazon Cognito authentication
+    - HTTPS support
+
+    ## Prerequisites
+
+    Before using this module, make sure you have the following prerequisites:
+
+    - AWS account
+    - Terraform installed
+    - Basic knowledge of AWS services and Terraform
+
+    ## Usage
+
+    ```hcl
+    module "directus" {
+      source = "./.."
+
+      application_name = local.name                # Change this to your application name
+      admin_email      = "fake-email@email.com"    # Change this to your email address
+      vpc_id           = module.vpc.vpc_id         # Change this to your VPC ID
+      subnet_ids       = module.vpc.public_subnets # Change this to your subnet IDs
+
+      create_cloudwatch_logs_group  = true
+      cloudwatch_logs_stream_prefix = "directus"
+
+      cpu    = 1024
+      memory = 2048
+
+      rds_database_name                         = "database_name"
+      rds_database_host                         = "database_host"
+      rds_database_port                         = "database_port
+      rds_database_engine                       = "database_engine"
+      rds_database_username                     = "database_username
+      rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
+
+      create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
+      s3_bucket_name   = "terraform-aws-directus-${local.region}"
+
+      healthcheck_path = "/server/ping"
+      image_tag        = "latest" # It's HIGHLY RECOMMENDED to specify an image tag instead of relying on "latest" as it could trigger unwanted updates.
+
+      tags = {
+        Application = "Directus"
+        Environment = "Test"
+      } # Change these tags to your prefered tags
+    }
+    ```
+
+    For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
+
+    <!-- BEGIN_TF_DOCS -->
+    {{ .Content }}
+    <!-- END_TF_DOCS -->
+
+    ## Contributing
+
+    Contributions to this module are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+
+    ## License
+
+    This module is open source and available under the [MIT License](https://opensource.org/licenses/MIT).
+    {{/** End of file fixer */}}
