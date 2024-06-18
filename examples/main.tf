@@ -34,8 +34,8 @@ module "directus" {
   create_cloudwatch_logs_group  = true
   cloudwatch_logs_stream_prefix = "directus"
 
-  cpu    = 2048
-  memory = 4096
+  cpu    = 1024
+  memory = 2048
 
   rds_database_name                         = module.rds.db_instance_name
   rds_database_host                         = module.rds.db_instance_address
@@ -106,9 +106,9 @@ module "rds" {
   identifier = "directus"
 
   engine               = "mysql"
-  family               = "mysql5.7"
-  major_engine_version = "5.7"
-  engine_version       = "5.7"
+  family               = "mysql8.0"
+  major_engine_version = "8.0"
+  engine_version       = "8.0"
   instance_class       = "db.t3.micro"
   allocated_storage    = 5
 
