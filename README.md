@@ -21,9 +21,9 @@ module "directus" {
 
   rds_database_name                         = "database_name"
   rds_database_host                         = "database_host"
-  rds_database_port                         = "database_port"
+  rds_database_port                         = "database_port
   rds_database_engine                       = "database_engine"
-  rds_database_username                     = "database_username"
+  rds_database_username                     = "database_username
   rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
 
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
@@ -129,7 +129,7 @@ Before using this module, make sure you have the following prerequisites:
 | <a name="input_admin_email"></a> [admin\_email](#input\_admin\_email) | The email address of the admin user | `string` | n/a | yes |
 | <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password) | The password of the admin user (if empty, it will be generated automatically) | `string` | `""` | no |
 | <a name="input_application_name"></a> [application\_name](#input\_application\_name) | The name of the application | `string` | n/a | yes |
-| <a name="input_autoscaling"></a> [autoscaling](#input\_autoscaling) | Autoscaling Configuration | <pre>object({<br>    enable           = bool<br>    memory_threshold = optional(number, 80)<br>    cpu_threshold    = optional(number, 60)<br>    min_capacity     = optional(number, 1)<br>    max_capacity     = number<br>  })</pre> | <pre>{<br>  "cpu_threshold": 60,<br>  "enable": false,<br>  "max_capacity": 3,<br>  "memory_threshold": 80,<br>  "min_capacity": 1<br>}</pre> | no |
+| <a name="input_autoscaling"></a> [autoscaling](#input\_autoscaling) | Autoscaling Configuration | <pre>object({<br>    enable           = bool<br>    memory_threshold = number<br>    cpu_threshold    = number<br>    min_capacity     = number<br>    max_capacity     = number<br>  })</pre> | <pre>{<br>  "cpu_threshold": 60,<br>  "enable": false,<br>  "max_capacity": 3,<br>  "memory_threshold": 80,<br>  "min_capacity": 1<br>}</pre> | no |
 | <a name="input_cloudwatch_logs_stream_prefix"></a> [cloudwatch\_logs\_stream\_prefix](#input\_cloudwatch\_logs\_stream\_prefix) | The prefix of the CloudWatch Logs stream | `string` | `"directus"` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of CPU units to reserve for the Directus service | `number` | `2048` | no |
 | <a name="input_create_cloudwatch_logs_group"></a> [create\_cloudwatch\_logs\_group](#input\_create\_cloudwatch\_logs\_group) | Whether to create a CloudWatch Logs group | `bool` | `false` | no |
