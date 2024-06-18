@@ -5,6 +5,8 @@ repos:
       - id: terraform_fmt
       - id: terraform_docs
         args:
+          - --args=--config=.terraform-docs.yml
+        args:
           - '--args=--lockfile=false'
       - id: terraform_tflint
         args:
