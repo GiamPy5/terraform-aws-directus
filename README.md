@@ -26,35 +26,42 @@ Before using this module, make sure you have the following prerequisites:
 
 ## Usage
 
-To use this module, follow these steps:
+```hcl
+module "directus" {
+  source = "./.."
 
-1. Clone the repository:
+  application_name = local.name                # Change this to your application name
+  admin_email      = "fake-email@email.com"    # Change this to your email address
+  vpc_id           = module.vpc.vpc_id         # Change this to your VPC ID
+  subnet_ids       = module.vpc.public_subnets # Change this to your subnet IDs
 
-    ```bash
-    git clone https://github.com/your-username/terraform-aws-directus.git
-    ```
+  create_cloudwatch_logs_group  = true
+  cloudwatch_logs_stream_prefix = "directus"
 
-2. Change into the module directory:
+  cpu    = 1024
+  memory = 2048
 
-    ```bash
-    cd terraform-aws-directus/examples
-    ```
+  rds_database_name                         = "database_name"
+  rds_database_host                         = "database_host"
+  rds_database_port                         = "database_port
+  rds_database_engine                       = "database_engine"
+  rds_database_username                     = "database_username
+  rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
 
-3. Initialize the Terraform workspace:
+  create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
+  s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-    ```bash
-    terraform init
-    ```
+  healthcheck_path = "/server/ping"
+  image_tag        = "latest" # It's HIGHLY RECOMMENDED to specify an image tag instead of relying on "latest" as it could trigger unwanted updates.
 
-4. Customize the module variables in `variables.tf` according to your requirements.
+  tags = {
+    Application = "Directus"
+    Environment = "Test"
+  } # Change these tags to your prefered tags
+}
+```
 
-5. Deploy the Directus infrastructure:
-
-    ```bash
-    terraform apply
-    ```
-
-6. Access the Directus application using the provided URL.
+For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
 
 ## Requirements
 
