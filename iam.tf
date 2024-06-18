@@ -4,7 +4,7 @@ data "aws_s3_bucket" "directus" {
   bucket = var.s3_bucket_name
 }
 
-resource "aws_iam_role" "ecs-service-role" {
+resource "aws_iam_role" "ecs_service_role" {
   name = "${var.application_name}-ecs-service-role"
 
   assume_role_policy = jsonencode({
@@ -21,12 +21,12 @@ resource "aws_iam_role" "ecs-service-role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ecs-service-role-ecs-task-execution" {
-  role       = aws_iam_role.ecs-service-role.name
+resource "aws_iam_role_policy_attachment" "ecs_service_role_ecs_task_execution" {
+  role       = aws_iam_role.ecs_service_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role" "ecs-task-role" {
+resource "aws_iam_role" "ecs_task_role" {
   name = "${var.application_name}-ecs-task-role"
 
   assume_role_policy = jsonencode({
@@ -43,7 +43,7 @@ resource "aws_iam_role" "ecs-task-role" {
   })
 }
 
-data "aws_iam_policy_document" "cloudwatch-policy" {
+data "aws_iam_policy_document" "cloudwatch_policy" {
   statement {
     sid = "CreateCloudWatchLogsGroup"
 
@@ -55,10 +55,10 @@ data "aws_iam_policy_document" "cloudwatch-policy" {
   }
 }
 
-resource "aws_iam_policy" "cloudwatch-logs-policy" {
+resource "aws_iam_policy" "cloudwatch_logs_policy" {
   name   = "${var.application_name}-cloudwatch-policy"
   path   = "/${var.application_name}/"
-  policy = data.aws_iam_policy_document.cloudwatch-policy.json
+  policy = data.aws_iam_policy_document.cloudwatch_policy.json
 }
 
 resource "aws_iam_user" "directus" {
@@ -73,10 +73,10 @@ resource "aws_iam_access_key" "directus" {
 resource "aws_iam_user_policy" "lb_ro" {
   name   = "${var.application_name}-s3-policy"
   user   = aws_iam_user.directus.name
-  policy = data.aws_iam_policy_document.s3-policy.json
+  policy = data.aws_iam_policy_document.s3_policy.json
 }
 
-data "aws_iam_policy_document" "s3-policy" {
+data "aws_iam_policy_document" "s3_policy" {
   statement {
     sid = "CrudAccessInS3Bucket"
 

@@ -1,7 +1,7 @@
 locals {
   cluster_name = "${var.application_name}-ecs-clstr"
 
-  admin_password = var.admin_password == "" ? random_password.directus-admin-password[0].result : var.admin_password
+  admin_password = var.admin_password == "" ? random_password.directus_admin_password[0].result : var.admin_password
 
   truncated_application_name = substr(var.application_name, 0, 20)
 
@@ -36,11 +36,11 @@ locals {
       memory    = var.memory
       essential = true
       secrets = [
-        { name : "SECRET", valueFrom : aws_secretsmanager_secret_version.directus-secret-version.arn },
-        { name : "ADMIN_PASSWORD", valueFrom : aws_secretsmanager_secret_version.directus-admin-password-version.arn },
+        { name : "SECRET", valueFrom : aws_secretsmanager_secret_version.directus_secret_version.arn },
+        { name : "ADMIN_PASSWORD", valueFrom : aws_secretsmanager_secret_version.directus_admin_password_version.arn },
         { name : "DB_PASSWORD", valueFrom : "${var.rds_database_password_secrets_manager_arn}:password::" },
-        { name : "STORAGE_S3_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus-serviceuser-secret-version.arn}:access_key_id::" },
-        { name : "STORAGE_S3_SECRET", valueFrom : "${aws_secretsmanager_secret_version.directus-serviceuser-secret-version.arn}:access_key_secret::" }
+        { name : "STORAGE_S3_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
+        { name : "STORAGE_S3_SECRET", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
       ]
       environment = [for key, value in local.environment_vars : {
         name  = key
@@ -85,52 +85,52 @@ resource "aws_s3_bucket" "directus" {
   tags = var.tags
 }
 
-resource "random_password" "directus-secret" {
+resource "random_password" "directus_secret" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "random_password" "directus-admin-password" {
+resource "random_password" "directus_admin_password" {
   count            = var.admin_password == "" ? 1 : 0
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "aws_secretsmanager_secret" "directus-serviceuser-secret" {
+resource "aws_secretsmanager_secret" "directus_serviceuser_secret" {
   name_prefix = "${var.application_name}-directus-serviceuser-secret"
 
   tags = var.tags
 }
 
-resource "aws_secretsmanager_secret_version" "directus-serviceuser-secret-version" {
-  secret_id = aws_secretsmanager_secret.directus-serviceuser-secret.id
+resource "aws_secretsmanager_secret_version" "directus_serviceuser_secret_version" {
+  secret_id = aws_secretsmanager_secret.directus_serviceuser_secret.id
   secret_string = jsonencode({
     access_key_id     = aws_iam_access_key.directus.id,
     access_key_secret = aws_iam_access_key.directus.secret
   })
 }
 
-resource "aws_secretsmanager_secret" "directus-secret" {
+resource "aws_secretsmanager_secret" "directus_secret" {
   name_prefix = "${var.application_name}-directus-secret"
 
   tags = var.tags
 }
 
-resource "aws_secretsmanager_secret_version" "directus-secret-version" {
-  secret_id     = aws_secretsmanager_secret.directus-secret.id
-  secret_string = random_password.directus-secret.result
+resource "aws_secretsmanager_secret_version" "directus_secret_version" {
+  secret_id     = aws_secretsmanager_secret.directus_secret.id
+  secret_string = random_password.directus_secret.result
 }
 
-resource "aws_secretsmanager_secret" "directus-admin-password" {
+resource "aws_secretsmanager_secret" "directus_admin_password" {
   name_prefix = "${var.application_name}-directus-admin-password"
 
   tags = var.tags
 }
 
-resource "aws_secretsmanager_secret_version" "directus-admin-password-version" {
-  secret_id     = aws_secretsmanager_secret.directus-admin-password.id
+resource "aws_secretsmanager_secret_version" "directus_admin_password_version" {
+  secret_id     = aws_secretsmanager_secret.directus_admin_password.id
   secret_string = local.admin_password
 }
 
@@ -147,13 +147,13 @@ module "ecs" {
   task_exec_iam_role_name = "${local.cluster_name}-task-exec-role"
   task_exec_iam_role_path = "/ecs/${local.cluster_name}/"
   task_exec_iam_role_policies = {
-    "awslogs" : aws_iam_policy.cloudwatch-logs-policy.arn
+    "awslogs" : aws_iam_policy.cloudwatch_logs_policy.arn
   }
 
   task_exec_secret_arns = [
-    aws_secretsmanager_secret.directus-secret.arn,
-    aws_secretsmanager_secret.directus-admin-password.arn,
-    aws_secretsmanager_secret.directus-serviceuser-secret.arn,
+    aws_secretsmanager_secret.directus_secret.arn,
+    aws_secretsmanager_secret.directus_admin_password.arn,
+    aws_secretsmanager_secret.directus_serviceuser_secret.arn,
     var.rds_database_password_secrets_manager_arn
   ]
 
@@ -182,7 +182,7 @@ module "ecs" {
   tags = var.tags
 }
 
-resource "aws_security_group" "ecs-sg" {
+resource "aws_security_group" "ecs_sg" {
   name        = "${local.truncated_application_name}-ecs-sg"
   description = "Allow inbound traffic on port 8055"
   vpc_id      = var.vpc_id
@@ -254,7 +254,7 @@ resource "aws_lb" "directus" {
   tags = var.tags
 }
 
-resource "aws_lb_target_group" "directus-lb-target-group-http" {
+resource "aws_lb_target_group" "directus_lb_target_group_http" {
   name_prefix = "dcts80"
   target_type = "ip"
   port        = 80
@@ -278,7 +278,7 @@ resource "aws_lb_target_group" "directus-lb-target-group-http" {
   tags = var.tags
 }
 
-# resource "aws_lb_target_group" "directus-lb-target-group-https" {
+# resource "aws_lb_target_group" "directus_lb_target_group_https" {
 #   name        = "${local.truncated_application_name}-https-tg"
 #   target_type = "ip"
 #   port        = 443
@@ -286,20 +286,20 @@ resource "aws_lb_target_group" "directus-lb-target-group-http" {
 #   vpc_id      = var.vpc_id
 # }
 
-resource "aws_lb_listener" "directus-lb-listener-http" {
+resource "aws_lb_listener" "directus_lb_listener_http" {
   load_balancer_arn = aws_lb.directus.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.directus-lb-target-group-http.arn
+    target_group_arn = aws_lb_target_group.directus_lb_target_group_http.arn
   }
 
   tags = var.tags
 }
 
-# resource "aws_lb_listener" "directus-lb-listener-https" {
+# resource "aws_lb_listener" "directus_lb_listener_https" {
 #   load_balancer_arn = aws_lb.directus.arn
 #   port              = "443"
 #   protocol          = "HTTPS"
@@ -319,7 +319,7 @@ resource "aws_ecs_service" "directus" {
   desired_count = 1
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.directus-lb-target-group-http.arn
+    target_group_arn = aws_lb_target_group.directus_lb_target_group_http.arn
     container_name   = "directus"
     container_port   = local.directus_port
   }
@@ -333,7 +333,7 @@ resource "aws_ecs_service" "directus" {
   network_configuration {
     assign_public_ip = true
     subnets          = var.subnet_ids
-    security_groups  = [aws_security_group.ecs-sg.id]
+    security_groups  = [aws_security_group.ecs_sg.id]
   }
 
   tags = var.tags
@@ -348,7 +348,7 @@ resource "aws_ecs_task_definition" "directus" {
   memory = var.memory
 
   execution_role_arn = module.ecs.task_exec_iam_role_arn
-  task_role_arn      = aws_iam_role.ecs-task-role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
 
   requires_compatibilities = ["FARGATE"]
 
@@ -356,4 +356,3 @@ resource "aws_ecs_task_definition" "directus" {
 
   tags = var.tags
 }
-
