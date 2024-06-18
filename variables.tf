@@ -10,6 +10,60 @@ variable "create_cloudwatch_logs_group" {
   default     = false
 }
 
+variable "enable_ses_emails_sending" {
+  description = "Whether to enable sending emails using SES"
+  type        = bool
+  default     = false
+}
+
+variable "ecs_service_enable_execute_command" {
+  description = "Whether to enable ECS service execute command"
+  type        = bool
+  default     = false
+}
+
+variable "autoscaling" {
+  description = "Autoscaling Configuration"
+  type = object({
+    enable           = bool
+    memory_threshold = number
+    cpu_threshold    = number
+    min_capacity     = number
+    max_capacity     = number
+  })
+  default = {
+    enable           = false
+    memory_threshold = 80
+    cpu_threshold    = 60
+    min_capacity     = 1
+    max_capacity     = 3
+  }
+}
+
+variable "force_new_ecs_deployment_on_apply" {
+  description = "Whether to force a new deployment of the ECS service on apply"
+  type        = bool
+  default     = false
+}
+
+variable "redis_host" {
+  description = "The host of the Redis server"
+  type        = string
+  default     = ""
+}
+
+variable "redis_port" {
+  description = "The port of the Redis server"
+  type        = number
+  default     = 6379
+}
+
+variable "redis_username" {
+  description = "The username of the Redis server"
+  type        = string
+  default     = "default"
+}
+
 variable "cpu" {
   description = "The number of CPU units to reserve for the Directus service"
   type        = number

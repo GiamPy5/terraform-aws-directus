@@ -1,5 +1,6 @@
 locals {
   cluster_name = "${var.application_name}-ecs-clstr"
+  service_name = "directus"
 
   admin_password = var.admin_password == "" ? random_password.directus_admin_password[0].result : var.admin_password
 
@@ -8,44 +9,68 @@ locals {
   s3_bucket_arn = var.create_s3_bucket ? aws_s3_bucket.directus[0].arn : data.aws_s3_bucket.directus[0].arn
   s3_bucket_id  = var.create_s3_bucket ? aws_s3_bucket.directus[0].id : data.aws_s3_bucket.directus[0].id
 
-  s3_bucket_name = var.s3_bucket_name != "" ? var.s3_bucket_name : "${local.truncated_application_name}-directus-bucket-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
+  s3_bucket_name = var.s3_bucket_name != "" ? var.s3_bucket_name : "${local.truncated_application_name}-${local.service_name}-bucket-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
 
   directus_port = 8055
 
-  environment_vars = merge(var.additional_configuration, {
-    ADMIN_EMAIL                 = var.admin_email
-    DB_CLIENT                   = var.rds_database_engine
-    DB_HOST                     = var.rds_database_host
-    DB_PORT                     = tostring(var.rds_database_port)
-    DB_DATABASE                 = var.rds_database_name
-    DB_USER                     = var.rds_database_username
-    DB_SSL__REJECT_UNAUTHORIZED = "false"
-    WEBSOCKETS_ENABLED          = "true"
-    STORAGE_LOCATIONS           = "s3"
-    STORAGE_S3_DRIVER           = "s3"
-    STORAGE_S3_BUCKET           = local.s3_bucket_id
-    STORAGE_S3_REGION           = data.aws_region.current.name
-    PUBLIC_URL                  = "http://${aws_lb.directus.dns_name}"
-  })
+  environment_vars = merge(
+    var.additional_configuration,
+    {
+      ADMIN_EMAIL                 = var.admin_email
+      DB_CLIENT                   = var.rds_database_engine
+      DB_HOST                     = var.rds_database_host
+      DB_PORT                     = tostring(var.rds_database_port)
+      DB_DATABASE                 = var.rds_database_name
+      DB_USER                     = var.rds_database_username
+      DB_SSL__REJECT_UNAUTHORIZED = "false"
+      WEBSOCKETS_ENABLED          = "true"
+      STORAGE_LOCATIONS           = "s3"
+      STORAGE_S3_DRIVER           = "s3"
+      STORAGE_S3_BUCKET           = local.s3_bucket_id
+      STORAGE_S3_REGION           = data.aws_region.current.name
+      EXTENSIONS_LOCATION         = "s3"
+      PUBLIC_URL                  = "http://${aws_lb.directus.dns_name}"
+    },
+    var.redis_host != "" ? {
+      CACHE_STORE           = "redis"
+      RATE_LIMITER_STORE    = "redis"
+      REDIS_HOST            = var.redis_host
+      REDIS_PORT            = var.redis_port
+      REDIS_USERNAME        = var.redis_username
+      SYNCHRONIZATION_STORE = "redis"
+      REDIS_PASSWORD        = "" # Secure transit not supported yet
+    } : {},
+    var.enable_ses_emails_sending ? {
+      EMAIL_TRANSPORT  = "ses"
+      EMAIL_SES_REGION = data.aws_region.current.name
+    } : {}
+  )
 
   container_definitions = [
     {
-      name      = "directus"
+      name      = local.service_name
       image     = "directus/directus:${var.image_tag}"
       cpu       = var.cpu
       memory    = var.memory
       essential = true
-      secrets = [
+      secrets = concat([
         { name : "SECRET", valueFrom : aws_secretsmanager_secret_version.directus_secret_version.arn },
         { name : "ADMIN_PASSWORD", valueFrom : aws_secretsmanager_secret_version.directus_admin_password_version.arn },
         { name : "DB_PASSWORD", valueFrom : "${var.rds_database_password_secrets_manager_arn}:password::" },
         { name : "STORAGE_S3_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
         { name : "STORAGE_S3_SECRET", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
-      ]
+        ],
+        var.enable_ses_emails_sending ? [
+          { name : "EMAIL_SES_CREDENTIALS__ACCESS_KEY_ID", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
+          { name : "EMAIL_SES_CREDENTIALS__SECRET_ACCESS_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
+      ] : [])
       environment = [for key, value in local.environment_vars : {
         name  = key
         value = value
       }]
+      linuxParameters = {
+        initProcessEnabled = true
+      }
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -56,11 +81,11 @@ locals {
         }
       }
       healthCheck = {
-        command     = ["CMD-SHELL", "wget -qO- http://localhost:${local.directus_port}${var.healthcheck_path} | grep -q 'pong' || exit 1"]
+        command     = ["CMD-SHELL", "wget -qO- http://localhost:${local.directus_port}${var.healthcheck_path} | grep -q 'ok' || exit 1"]
         interval    = 60
         timeout     = 10
-        retries     = 5
-        startPeriod = 30
+        retries     = 10
+        startPeriod = 60
       }
       portMappings = [
         {
@@ -99,7 +124,7 @@ resource "random_password" "directus_admin_password" {
 }
 
 resource "aws_secretsmanager_secret" "directus_serviceuser_secret" {
-  name_prefix = "${var.application_name}-directus-serviceuser-secret"
+  name_prefix = "${var.application_name}-${local.service_name}-serviceuser-secret"
 
   tags = var.tags
 }
@@ -113,7 +138,7 @@ resource "aws_secretsmanager_secret_version" "directus_serviceuser_secret_versio
 }
 
 resource "aws_secretsmanager_secret" "directus_secret" {
-  name_prefix = "${var.application_name}-directus-secret"
+  name_prefix = "${var.application_name}-${local.service_name}-secret"
 
   tags = var.tags
 }
@@ -124,7 +149,7 @@ resource "aws_secretsmanager_secret_version" "directus_secret_version" {
 }
 
 resource "aws_secretsmanager_secret" "directus_admin_password" {
-  name_prefix = "${var.application_name}-directus-admin-password"
+  name_prefix = "${var.application_name}-${local.service_name}-admin-password"
 
   tags = var.tags
 }
@@ -170,6 +195,7 @@ module "ecs" {
     FARGATE = {
       default_capacity_provider_strategy = {
         weight = 50
+        base   = 1
       }
     }
     FARGATE_SPOT = {
@@ -237,7 +263,7 @@ resource "aws_security_group" "lb_sg" {
 }
 
 resource "aws_lb" "directus" {
-  name               = "${local.truncated_application_name}-directus-lb"
+  name               = "${local.truncated_application_name}-${local.service_name}-lb"
   internal           = false
   load_balancer_type = "application"
   subnets            = var.subnet_ids
@@ -311,16 +337,21 @@ resource "aws_lb_listener" "directus_lb_listener_http" {
 # }
 
 resource "aws_ecs_service" "directus" {
-  name            = "directus"
+  name            = local.service_name
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.directus.arn
   launch_type     = "FARGATE"
 
   desired_count = 1
 
+  health_check_grace_period_seconds = 60
+  enable_execute_command            = var.ecs_service_enable_execute_command
+
+  force_new_deployment = var.force_new_ecs_deployment_on_apply
+
   load_balancer {
     target_group_arn = aws_lb_target_group.directus_lb_target_group_http.arn
-    container_name   = "directus"
+    container_name   = local.service_name
     container_port   = local.directus_port
   }
 
@@ -336,11 +367,15 @@ resource "aws_ecs_service" "directus" {
     security_groups  = [aws_security_group.ecs_sg.id]
   }
 
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   tags = var.tags
 }
 
 resource "aws_ecs_task_definition" "directus" {
-  family = "${local.truncated_application_name}-directus"
+  family = "${local.truncated_application_name}-${local.service_name}"
 
   network_mode = "awsvpc"
 
@@ -355,4 +390,47 @@ resource "aws_ecs_task_definition" "directus" {
   container_definitions = jsonencode(local.container_definitions)
 
   tags = var.tags
+}
+
+resource "aws_appautoscaling_target" "autoscaling_target" {
+  count              = var.autoscaling.enable ? 1 : 0
+  max_capacity       = var.autoscaling.max_capacity
+  min_capacity       = var.autoscaling.min_capacity
+  resource_id        = "service/${local.cluster_name}/${local.service_name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "autoscaling_policy_memory" {
+  count              = var.autoscaling.enable ? 1 : 0
+  name               = "${local.cluster_name}-memory-scaling-policy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value = var.autoscaling.memory_threshold
+  }
+}
+
+resource "aws_appautoscaling_policy" "autoscaling_policy_cpu" {
+  count              = var.autoscaling.enable ? 1 : 0
+  name               = "${local.cluster_name}-cpu-scaling-policy"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value = var.autoscaling.cpu_threshold
+  }
 }

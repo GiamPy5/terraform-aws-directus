@@ -6,7 +6,7 @@ This Terraform module deploys Directus on an AWS Fargate ECS cluster.
 
 ```hcl
 module "directus" {
-  source = "./.."
+  source  = "GiamPy5/directus/aws"
 
   application_name = local.name                # Change this to your application name
   admin_email      = "fake-email@email.com"    # Change this to your email address
@@ -19,6 +19,15 @@ module "directus" {
   cpu    = 1024
   memory = 2048
 
+  ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
+  enable_ses_emails_sending          = true
+  force_new_ecs_deployment_on_apply  = true
+
+  # Add additional custom configuration here (https://docs.directus.io/self-hosted/config-options.html#configuration-options)
+  additional_configuration = {
+    "LOG_LEVEL" = "debug"
+  }
+
   rds_database_name                         = "database_name"
   rds_database_host                         = "database_host"
   rds_database_port                         = "database_port"
@@ -26,17 +35,28 @@ module "directus" {
   rds_database_username                     = "database_username"
   rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
 
+  redis_host = module.elasticache.cluster_cache_nodes[0].address
+  redis_port = module.elasticache.cluster_cache_nodes[0].port
+
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-  healthcheck_path = "/server/ping"
-  image_tag        = "latest" # It's HIGHLY RECOMMENDED to specify an image tag instead of relying on "latest" as it could trigger unwanted updates.
+  healthcheck_path = "/server/health"
+  image_tag        = "10.12"
+
+  autoscaling = {
+    enable           = true
+    cpu_threshold    = 60
+    memory_threshold = 80
+    min_capacity     = 1
+    max_capacity     = 2
+  }
 
   tags = {
     Application = "Directus"
     Environment = "Test"
   } # Change these tags to your prefered tags
-}
+
 ```
 
 For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
@@ -89,6 +109,9 @@ Before using this module, make sure you have the following prerequisites:
 
 | Name | Type |
 |------|------|
+| [aws_appautoscaling_policy.autoscaling_policy_cpu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
+| [aws_appautoscaling_policy.autoscaling_policy_memory](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
+| [aws_appautoscaling_target.autoscaling_target](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_target) | resource |
 | [aws_ecs_service.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_service) | resource |
 | [aws_ecs_task_definition.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition) | resource |
 | [aws_iam_access_key.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_access_key) | resource |
@@ -126,10 +149,14 @@ Before using this module, make sure you have the following prerequisites:
 | <a name="input_admin_email"></a> [admin\_email](#input\_admin\_email) | The email address of the admin user | `string` | n/a | yes |
 | <a name="input_admin_password"></a> [admin\_password](#input\_admin\_password) | The password of the admin user (if empty, it will be generated automatically) | `string` | `""` | no |
 | <a name="input_application_name"></a> [application\_name](#input\_application\_name) | The name of the application | `string` | n/a | yes |
+| <a name="input_autoscaling"></a> [autoscaling](#input\_autoscaling) | Autoscaling Configuration | <pre>object({<br>    enable           = bool<br>    memory_threshold = number<br>    cpu_threshold    = number<br>    min_capacity     = number<br>    max_capacity     = number<br>  })</pre> | <pre>{<br>  "cpu_threshold": 60,<br>  "enable": false,<br>  "max_capacity": 3,<br>  "memory_threshold": 80,<br>  "min_capacity": 1<br>}</pre> | no |
 | <a name="input_cloudwatch_logs_stream_prefix"></a> [cloudwatch\_logs\_stream\_prefix](#input\_cloudwatch\_logs\_stream\_prefix) | The prefix of the CloudWatch Logs stream | `string` | `"directus"` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of CPU units to reserve for the Directus service | `number` | `2048` | no |
 | <a name="input_create_cloudwatch_logs_group"></a> [create\_cloudwatch\_logs\_group](#input\_create\_cloudwatch\_logs\_group) | Whether to create a CloudWatch Logs group | `bool` | `false` | no |
 | <a name="input_create_s3_bucket"></a> [create\_s3\_bucket](#input\_create\_s3\_bucket) | Whether to create an S3 bucket | `bool` | `false` | no |
+| <a name="input_ecs_service_enable_execute_command"></a> [ecs\_service\_enable\_execute\_command](#input\_ecs\_service\_enable\_execute\_command) | Whether to enable ECS service execute command | `bool` | `false` | no |
+| <a name="input_enable_ses_emails_sending"></a> [enable\_ses\_emails\_sending](#input\_enable\_ses\_emails\_sending) | Whether to enable sending emails using SES | `bool` | `false` | no |
+| <a name="input_force_new_ecs_deployment_on_apply"></a> [force\_new\_ecs\_deployment\_on\_apply](#input\_force\_new\_ecs\_deployment\_on\_apply) | Whether to force a new deployment of the ECS service on apply | `bool` | `false` | no |
 | <a name="input_healthcheck_path"></a> [healthcheck\_path](#input\_healthcheck\_path) | The path of the healthcheck endpoint | `string` | `"/server/ping"` | no |
 | <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | The tag of the Docker image | `string` | `"latest"` | no |
 | <a name="input_memory"></a> [memory](#input\_memory) | The amount of memory to reserve for the Directus service | `number` | `4096` | no |
@@ -139,6 +166,9 @@ Before using this module, make sure you have the following prerequisites:
 | <a name="input_rds_database_password_secrets_manager_arn"></a> [rds\_database\_password\_secrets\_manager\_arn](#input\_rds\_database\_password\_secrets\_manager\_arn) | The ARN of the Secrets Manager secret containing the RDS database password | `string` | n/a | yes |
 | <a name="input_rds_database_port"></a> [rds\_database\_port](#input\_rds\_database\_port) | The port of the RDS database | `number` | n/a | yes |
 | <a name="input_rds_database_username"></a> [rds\_database\_username](#input\_rds\_database\_username) | The username of the RDS database user | `string` | n/a | yes |
+| <a name="input_redis_host"></a> [redis\_host](#input\_redis\_host) | The host of the Redis server | `string` | `""` | no |
+| <a name="input_redis_port"></a> [redis\_port](#input\_redis\_port) | The port of the Redis server | `number` | `6379` | no |
+| <a name="input_redis_username"></a> [redis\_username](#input\_redis\_username) | The username of the Redis server | `string` | `"default"` | no |
 | <a name="input_s3_bucket_name"></a> [s3\_bucket\_name](#input\_s3\_bucket\_name) | The name of the S3 bucket | `string` | `""` | no |
 | <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | The IDs of the subnets | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to apply to the resources | `map(string)` | `{}` | no |
