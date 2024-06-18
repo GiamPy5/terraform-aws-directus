@@ -26,9 +26,9 @@ variable "autoscaling" {
   description = "Autoscaling Configuration"
   type = object({
     enable           = bool
-    memory_threshold = optional(number, 80)
-    cpu_threshold    = optional(number, 60)
-    min_capacity     = optional(number, 1)
+    memory_threshold = number
+    cpu_threshold    = number
+    min_capacity     = number
     max_capacity     = number
   })
   default = {
