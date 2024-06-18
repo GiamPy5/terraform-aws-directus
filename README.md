@@ -2,28 +2,6 @@
 
 This Terraform module deploys Directus on an AWS Fargate ECS cluster.
 
-## Features
-
-- Easy deployment of Directus on AWS Fargate ECS
-- Automatic scaling and load balancing
-- Highly available and fault-tolerant architecture
-- Customizable configuration options
-- S3 integration for static assets
-
-## To-Be-Done
-
-- Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
-- Implement Amazon Cognito authentication
-- HTTPS support
-
-## Prerequisites
-
-Before using this module, make sure you have the following prerequisites:
-
-- AWS account
-- Terraform installed
-- Basic knowledge of AWS services and Terraform
-
 ## Usage
 
 ```hcl
@@ -62,6 +40,28 @@ module "directus" {
 ```
 
 For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
+
+## Features
+
+- Easy deployment of Directus on AWS Fargate ECS
+- Automatic scaling and load balancing
+- Highly available and fault-tolerant architecture
+- Customizable configuration options
+- S3 integration for static assets
+
+## To-Be-Done
+
+- Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
+- Implement Amazon Cognito authentication
+- HTTPS support
+
+## Prerequisites
+
+Before using this module, make sure you have the following prerequisites:
+
+- AWS account
+- Terraform installed
+- Basic knowledge of AWS services and Terraform
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
