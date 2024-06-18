@@ -23,7 +23,7 @@ module "directus" {
   rds_database_host                         = "database_host"
   rds_database_port                         = "database_port
   rds_database_engine                       = "database_engine"
-  rds_database_username                     = "database_username
+  rds_database_username                     = "database_username"
   rds_database_password_secrets_manager_arn = "database_user_password_secrets_manager_arn"
 
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
