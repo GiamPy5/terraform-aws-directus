@@ -20,7 +20,7 @@ locals {
 }
 
 ################################################################################
-# RDS Module
+# Directus Module
 ################################################################################
 
 module "directus" {
@@ -37,6 +37,15 @@ module "directus" {
   cpu    = 1024
   memory = 2048
 
+  ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
+  enable_ses_emails_sending          = true
+  force_new_ecs_deployment_on_apply  = true
+
+  # Add additional custom configuration here (https://docs.directus.io/self-hosted/config-options.html#configuration-options)
+  additional_configuration = {
+    "LOG_LEVEL" = "debug"
+  }
+
   rds_database_name                         = module.rds.db_instance_name
   rds_database_host                         = module.rds.db_instance_address
   rds_database_port                         = module.rds.db_instance_port
@@ -44,11 +53,22 @@ module "directus" {
   rds_database_username                     = module.rds.db_instance_username
   rds_database_password_secrets_manager_arn = module.rds.db_instance_master_user_secret_arn
 
+  redis_host = module.elasticache.cluster_cache_nodes[0].address
+  redis_port = module.elasticache.cluster_cache_nodes[0].port
+
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-  healthcheck_path = "/server/ping"
-  image_tag        = "latest" # It's HIGHLY RECOMMENDED to specify an image tag instead of relying on "latest" as it could trigger unwanted updates.
+  healthcheck_path = "/server/health"
+  image_tag        = "10.12"
+
+  autoscaling = {
+    enable           = true
+    cpu_threshold    = 60
+    memory_threshold = 80
+    min_capacity     = 1
+    max_capacity     = 2
+  }
 
   tags = {
     Application = "Directus"
@@ -119,5 +139,51 @@ module "rds" {
   vpc_security_group_ids = [module.security_group.security_group_id]
   db_subnet_group_name   = module.vpc.database_subnet_group
 
+  skip_final_snapshot         = true
   manage_master_user_password = true
+}
+
+module "elasticache" {
+  source  = "terraform-aws-modules/elasticache/aws"
+  version = "1.2.0"
+
+  cluster_id               = local.name
+  create_cluster           = true
+  create_replication_group = false
+
+  engine_version = "7.1"
+  node_type      = "cache.t4g.micro"
+
+  maintenance_window = "sun:05:00-sun:09:00"
+  apply_immediately  = true
+
+  # Security Group
+  vpc_id = module.vpc.vpc_id
+  security_group_rules = {
+    ingress_vpc = {
+      # Default type is `ingress`
+      # Default port is based on the default engine port
+      description = "VPC traffic"
+      cidr_ipv4   = module.vpc.vpc_cidr_block
+    }
+  }
+
+  # Subnet Group
+  subnet_group_name        = local.name
+  subnet_group_description = "${title(local.name)} subnet group"
+  subnet_ids               = module.vpc.private_subnets
+
+  # Parameter Group
+  create_parameter_group      = true
+  parameter_group_name        = local.name
+  parameter_group_family      = "redis7"
+  parameter_group_description = "${title(local.name)} parameter group"
+  parameters = [
+    {
+      name  = "latency-tracking"
+      value = "yes"
+    }
+  ]
+
+  tags = local.tags
 }

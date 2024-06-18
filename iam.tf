@@ -83,7 +83,8 @@ data "aws_iam_policy_document" "s3_policy" {
     actions = [
       "s3:Get*",
       "s3:Put*",
-      "s3:Delete*"
+      "s3:Delete*",
+      "s3:List*"
     ]
 
     resources = [
