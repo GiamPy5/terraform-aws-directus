@@ -2,10 +2,18 @@ provider "aws" {
   region = local.region
 }
 
+provider "aws" {
+  alias  = "us-east-1"
+  region = "us-east-1"
+}
+
 data "aws_availability_zones" "available" {}
 
 locals {
   name = "terraform-aws-directus"
+
+  domain_name             = "algofantacalcio.io"
+  application_domain_name = "directus.${local.domain_name}"
 
   region = "eu-central-1"
 
@@ -31,6 +39,8 @@ module "directus" {
   vpc_id           = module.vpc.vpc_id         # Change this to your VPC ID
   subnet_ids       = module.vpc.public_subnets # Change this to your subnet IDs
 
+  public_url = "https://${local.application_domain_name}"
+
   create_cloudwatch_logs_group  = true
   cloudwatch_logs_stream_prefix = "directus"
 
@@ -45,6 +55,8 @@ module "directus" {
   additional_configuration = {
     "LOG_LEVEL" = "debug"
   }
+
+  ssl_certificate_arn = aws_acm_certificate.cert.arn
 
   rds_database_name                         = module.rds.db_instance_name
   rds_database_host                         = module.rds.db_instance_address
@@ -80,6 +92,7 @@ module "directus" {
 # Supporting Resources
 ################################################################################
 
+# Network
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -97,6 +110,7 @@ module "vpc" {
   tags = local.tags
 }
 
+# RDS Database
 module "security_group" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 5.0"
@@ -143,6 +157,7 @@ module "rds" {
   manage_master_user_password = true
 }
 
+# Redis
 module "elasticache" {
   source  = "terraform-aws-modules/elasticache/aws"
   version = "1.2.0"
@@ -186,4 +201,134 @@ module "elasticache" {
   ]
 
   tags = local.tags
+}
+
+# Application Domain
+data "aws_route53_zone" "hosted_zone" {
+  name = local.domain_name
+}
+
+resource "aws_route53_record" "websiteurl" {
+  name    = local.application_domain_name
+  zone_id = data.aws_route53_zone.hosted_zone.zone_id
+  type    = "A"
+  alias {
+    name                   = aws_cloudfront_distribution.cloudfront_distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.cloudfront_distribution.hosted_zone_id
+    evaluate_target_health = true
+  }
+}
+
+# Domain Certificate
+resource "aws_acm_certificate" "cert" {
+  domain_name               = local.application_domain_name
+  subject_alternative_names = [module.directus.load_balancer_dns_name]
+  validation_method         = "DNS"
+  tags                      = local.tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for d in aws_acm_certificate.cert.domain_validation_options : d.domain_name => {
+      name   = d.resource_record_name
+      record = d.resource_record_value
+      type   = d.resource_record_type
+    }
+  }
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.hosted_zone.zone_id
+}
+
+resource "aws_acm_certificate_validation" "cert_validation" {
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
+}
+
+# CloudFront Certificate
+
+resource "aws_acm_certificate" "cert_cloudfront" {
+  provider = aws.us-east-1
+
+  domain_name               = local.application_domain_name
+  subject_alternative_names = [module.directus.load_balancer_dns_name]
+  validation_method         = "DNS"
+  tags                      = local.tags
+}
+
+resource "aws_route53_record" "cert_validation_cloudfront" {
+  for_each = {
+    for d in aws_acm_certificate.cert.domain_validation_options : d.domain_name => {
+      name   = d.resource_record_name
+      record = d.resource_record_value
+      type   = d.resource_record_type
+    }
+  }
+  allow_overwrite = true
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.hosted_zone.zone_id
+}
+
+resource "aws_acm_certificate_validation" "cert_validation_cloudfront" {
+  provider = aws.us-east-1
+
+  certificate_arn         = aws_acm_certificate.cert_cloudfront.arn
+  validation_record_fqdns = [for r in aws_route53_record.cert_validation_cloudfront : r.fqdn]
+}
+
+resource "aws_cloudfront_distribution" "cloudfront_distribution" {
+  enabled = true
+  aliases = [local.application_domain_name]
+  origin {
+    domain_name = module.directus.load_balancer_dns_name
+    origin_id   = module.directus.load_balancer_dns_name
+    custom_origin_config {
+      http_port                = 80
+      https_port               = 443
+      origin_keepalive_timeout = 5
+      origin_protocol_policy   = "https-only"
+      origin_read_timeout      = 30
+      origin_ssl_protocols = [
+        "TLSv1.2",
+      ]
+    }
+  }
+
+  default_root_object = "/server/info"
+
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    target_origin_id       = module.directus.load_balancer_dns_name
+    viewer_protocol_policy = "redirect-to-https"
+    forwarded_values {
+      headers      = []
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
+  }
+  restrictions {
+    geo_restriction {
+      restriction_type = "whitelist"
+      locations        = ["IT", "PL"]
+    }
+  }
+  tags = local.tags
+  viewer_certificate {
+    acm_certificate_arn      = aws_acm_certificate.cert_cloudfront.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
 }

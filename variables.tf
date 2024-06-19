@@ -4,10 +4,28 @@ variable "create_s3_bucket" {
   default     = false
 }
 
+variable "public_url" {
+  description = "The public URL of the Directus service"
+  type        = string
+  default     = ""
+}
+
 variable "create_cloudwatch_logs_group" {
   description = "Whether to create a CloudWatch Logs group"
   type        = bool
   default     = false
+}
+
+variable "enable_access_logs" {
+  description = "Whether to enable access logs of the Load Balancer"
+  type        = bool
+  default     = false
+}
+
+variable "ssl_certificate_arn" {
+  description = "The ARN of the SSL certificate"
+  type        = string
+  default     = ""
 }
 
 variable "enable_ses_emails_sending" {

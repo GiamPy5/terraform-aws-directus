@@ -13,6 +13,10 @@ locals {
 
   directus_port = 8055
 
+  public_url = var.public_url != "" ? var.public_url : "http://${aws_lb.directus.dns_name}"
+
+  is_https_enabled = strcontains(var.public_url, "https") ? true : false
+
   environment_vars = merge(
     var.additional_configuration,
     {
@@ -29,7 +33,7 @@ locals {
       STORAGE_S3_BUCKET           = local.s3_bucket_id
       STORAGE_S3_REGION           = data.aws_region.current.name
       EXTENSIONS_LOCATION         = "s3"
-      PUBLIC_URL                  = "http://${aws_lb.directus.dns_name}"
+      PUBLIC_URL                  = local.public_url
     },
     var.redis_host != "" ? {
       CACHE_STORE           = "redis"
@@ -106,6 +110,14 @@ resource "aws_s3_bucket" "directus" {
   count = var.create_s3_bucket ? 1 : 0
 
   bucket = local.s3_bucket_name
+
+  tags = var.tags
+}
+
+resource "aws_s3_bucket" "directus_lb_logs" {
+  count = var.enable_access_logs ? 1 : 0
+
+  bucket = "${local.truncated_application_name}-lb-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
 
   tags = var.tags
 }
@@ -209,7 +221,7 @@ module "ecs" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  name        = "${local.truncated_application_name}-ecs-sg"
+  name_prefix = "${local.truncated_application_name}-ecs-sg"
   description = "Allow inbound traffic on port 8055"
   vpc_id      = var.vpc_id
 
@@ -228,29 +240,25 @@ resource "aws_security_group" "ecs_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = var.tags
 }
 
 resource "aws_security_group" "lb_sg" {
-  name        = "${local.truncated_application_name}-lb-sg"
-  description = "Allow inbound traffic on port 80"
+  name_prefix = "${local.truncated_application_name}-lb-sg"
+  description = "Allow inbound traffic on port ${local.is_https_enabled ? 443 : 80}"
   vpc_id      = var.vpc_id
 
   ingress {
     description = "Allow HTTP traffic"
-    from_port   = 80
-    to_port     = 80
+    from_port   = local.is_https_enabled ? 443 : 80
+    to_port     = local.is_https_enabled ? 443 : 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  # ingress {
-  #   description = "Allow HTTPS traffic"
-  #   from_port   = 443
-  #   to_port     = 443
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
 
   egress {
     from_port   = 0
@@ -259,8 +267,14 @@ resource "aws_security_group" "lb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = var.tags
 }
+
+
 
 resource "aws_lb" "directus" {
   name               = "${local.truncated_application_name}-${local.service_name}-lb"
@@ -271,20 +285,23 @@ resource "aws_lb" "directus" {
 
   enable_deletion_protection = false
 
-  # access_logs {
-  #   bucket  = aws_s3_bucket.lb_logs.id
-  #   prefix  = "test-lb"
-  #   enabled = true
-  # }
+  dynamic "access_logs" {
+    for_each = var.enable_access_logs ? [1] : []
+    content {
+      bucket  = aws_s3_bucket.directus_lb_logs[0].id
+      prefix  = "alb-access-logs"
+      enabled = true
+    }
+  }
 
   tags = var.tags
 }
 
-resource "aws_lb_target_group" "directus_lb_target_group_http" {
-  name_prefix = "dcts80"
+resource "aws_lb_target_group" "directus_lb_target_group" {
+  name_prefix = "drctus"
   target_type = "ip"
-  port        = 80
-  protocol    = "HTTP"
+  port        = local.is_https_enabled ? 443 : 80
+  protocol    = local.is_https_enabled ? "HTTPS" : "HTTP"
   vpc_id      = var.vpc_id
 
   health_check {
@@ -304,37 +321,20 @@ resource "aws_lb_target_group" "directus_lb_target_group_http" {
   tags = var.tags
 }
 
-# resource "aws_lb_target_group" "directus_lb_target_group_https" {
-#   name        = "${local.truncated_application_name}-https-tg"
-#   target_type = "ip"
-#   port        = 443
-#   protocol    = "HTTPS"
-#   vpc_id      = var.vpc_id
-# }
-
-resource "aws_lb_listener" "directus_lb_listener_http" {
+resource "aws_lb_listener" "directus_lb_listener" {
   load_balancer_arn = aws_lb.directus.arn
-  port              = "80"
-  protocol          = "HTTP"
+  port              = local.is_https_enabled ? 443 : 80
+  protocol          = local.is_https_enabled ? "HTTPS" : "HTTP"
+  ssl_policy        = local.is_https_enabled ? "ELBSecurityPolicy-TLS13-1-2-2021-06" : ""
+  certificate_arn   = local.is_https_enabled ? var.ssl_certificate_arn : ""
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.directus_lb_target_group_http.arn
+    target_group_arn = aws_lb_target_group.directus_lb_target_group.arn
   }
 
   tags = var.tags
 }
-
-# resource "aws_lb_listener" "directus_lb_listener_https" {
-#   load_balancer_arn = aws_lb.directus.arn
-#   port              = "443"
-#   protocol          = "HTTPS"
-
-#   default_action {
-#     type             = "forward"
-#     target_group_arn = aws_lb_target_group.directus-lb-target-group-https.arn
-#   }
-# }
 
 resource "aws_ecs_service" "directus" {
   name            = local.service_name
@@ -350,16 +350,10 @@ resource "aws_ecs_service" "directus" {
   force_new_deployment = var.force_new_ecs_deployment_on_apply
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.directus_lb_target_group_http.arn
+    target_group_arn = aws_lb_target_group.directus_lb_target_group.arn
     container_name   = local.service_name
     container_port   = local.directus_port
   }
-
-  # load_balancer {
-  #   target_group_arn = aws_lb_target_group.directus-lb-target-group-https.arn
-  #   container_name   = "directus"
-  #   container_port   = local.directus_port
-  # }
 
   network_configuration {
     assign_public_ip = true
