@@ -116,6 +116,18 @@ resource "aws_s3_bucket" "directus" {
 
   bucket = local.s3_bucket_name
 
+  dynamic "server_side_encryption_configuration" {
+    for_each = var.kms_key_id != "" ? [1] : []
+    content {
+      rule {
+        apply_server_side_encryption_by_default {
+          sse_algorithm     = "aws:kms"
+          kms_master_key_id = var.kms_key_id
+        }
+      }
+    }
+  }
+
   tags = var.tags
 }
 
@@ -138,6 +150,14 @@ module "s3_bucket_for_logs" {
 
   tags = var.tags
 }
+resource "aws_s3_bucket_versioning" "versioning_example" {
+  count  = var.create_s3_bucket && var.enable_s3_bucket_versioning ? 1 : 0
+  bucket = aws_s3_bucket.directus[0].id
+  versioning_configuration {
+    status     = "Enabled"
+    mfa_delete = var.s3_bucket_versioning_configuration.mfa_delete
+  }
+}
 
 resource "random_password" "directus_secret" {
   length           = 16
@@ -155,6 +175,8 @@ resource "random_password" "directus_admin_password" {
 resource "aws_secretsmanager_secret" "directus_serviceuser_secret" {
   name_prefix = "${var.application_name}-${local.service_name}-serviceuser-secret"
 
+  kms_key_id = var.kms_key_id
+
   tags = var.tags
 }
 
@@ -169,6 +191,8 @@ resource "aws_secretsmanager_secret_version" "directus_serviceuser_secret_versio
 resource "aws_secretsmanager_secret" "directus_secret" {
   name_prefix = "${var.application_name}-${local.service_name}-secret"
 
+  kms_key_id = var.kms_key_id
+
   tags = var.tags
 }
 
@@ -179,6 +203,8 @@ resource "aws_secretsmanager_secret_version" "directus_secret_version" {
 
 resource "aws_secretsmanager_secret" "directus_admin_password" {
   name_prefix = "${var.application_name}-${local.service_name}-admin-password"
+
+  kms_key_id = var.kms_key_id
 
   tags = var.tags
 }

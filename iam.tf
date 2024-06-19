@@ -66,13 +66,28 @@ resource "aws_iam_user" "directus" {
   path = "/${var.application_name}/"
 }
 
+resource "aws_iam_group" "directus" {
+  name = "${var.application_name}-service-user"
+  path = "/${var.application_name}/"
+}
+
+resource "aws_iam_group_membership" "directus" {
+  name = "${var.application_name}-group-membership"
+
+  users = [
+    aws_iam_user.directus.name
+  ]
+
+  group = aws_iam_group.directus.name
+}
+
 resource "aws_iam_access_key" "directus" {
   user = aws_iam_user.directus.name
 }
 
-resource "aws_iam_user_policy" "lb_ro" {
+resource "aws_iam_group_policy" "lb_ro" {
   name   = "${var.application_name}-s3-policy"
-  user   = aws_iam_user.directus.name
+  group  = aws_iam_group.directus.name
   policy = data.aws_iam_policy_document.s3_policy.json
 }
 

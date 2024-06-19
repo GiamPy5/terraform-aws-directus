@@ -86,6 +86,8 @@ module "directus" {
 
   enable_alb_access_logs = true
 
+  enable_s3_bucket_versioning = true
+
   autoscaling = {
     enable           = true
     cpu_threshold    = 60
