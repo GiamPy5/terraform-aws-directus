@@ -4,11 +4,21 @@ output:
   file: "README.md"
   mode: replace
   template: |-
-    # Terraform AWS Directus Module
+    # Terraform AWS Directus Module 🚀
 
-    This Terraform module deploys Directus on an AWS Fargate ECS cluster.
+    This Terraform module simplifies the deployment of [Directus](https://directus.io/) on an AWS Fargate ECS cluster.
 
-    ## Usage
+    ## 🌟 Features
+
+    - **Seamless Deployment** of Directus on AWS Fargate ECS
+    - **Automatic Scaling** and Load Balancing
+    - **High Availability** and Fault Tolerance
+    - **Customizable Configuration** Options
+    - **S3 Integration** for Static Assets
+
+    ## 🚀 Quick Start
+
+    Deploy Directus quickly and easily by including this module in your Terraform configuration:
 
     ```hcl
     module "directus" {
@@ -61,43 +71,34 @@ output:
       tags = {
         Application = "Directus"
         Environment = "Test"
-      } # Change these tags to your prefered tags
-
+      } # Change these tags to your preferred tags
+    }
     ```
 
-    For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
+    For a complete example, including all dependencies like database inputs, check out the [examples](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples) section.
 
-    ## Features
+    ## 📋 Prerequisites
 
-    - Easy deployment of Directus on AWS Fargate ECS
-    - Automatic scaling and load balancing
-    - Highly available and fault-tolerant architecture
-    - Customizable configuration options
-    - S3 integration for static assets
+    Before using this module, ensure you have the following:
 
-    ## To-Be-Done
+    - An **AWS account** 🛠️
+    - **Terraform installed** on your machine 🌐
+    - Basic knowledge of **AWS services** and **Terraform** 📚
 
-    - Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
-    - Implement Amazon Cognito authentication
-    - HTTPS support
+    ## 📅 Roadmap
 
-    ## Prerequisites
+    - [ ] Implement Amazon Cognito authentication
 
-    Before using this module, make sure you have the following prerequisites:
+    ## 📚 Module Documentation
 
-    - AWS account
-    - Terraform installed
-    - Basic knowledge of AWS services and Terraform
-
-    <!-- BEGIN_TF_DOCS -->
     {{ .Content }}
-    <!-- END_TF_DOCS -->
 
-    ## Contributing
+    ## 🤝 Contributing
 
-    Contributions to this module are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+    Contributions are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/GiamPy5/terraform-aws-directus).
 
-    ## License
+    ## 📄 License
 
     This module is open source and available under the [MIT License](https://opensource.org/licenses/MIT).
+
     {{/** End of file fixer */}}

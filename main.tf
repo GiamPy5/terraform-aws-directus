@@ -13,6 +13,8 @@ locals {
 
   directus_port = 8055
 
+  healthcheck_path = "/server/health"
+
   public_url = var.public_url != "" ? var.public_url : "http://${aws_lb.directus.dns_name}"
 
   is_https_enabled = strcontains(var.public_url, "https") ? true : false
@@ -36,6 +38,9 @@ locals {
       PUBLIC_URL                  = local.public_url
     },
     var.redis_host != "" ? {
+      CACHE_AUTO_PURGE      = "true"
+      CACHE_STATUS_HEADER   = "X-Directus-Cache"
+      CACHE_ENABLED         = "true"
       CACHE_STORE           = "redis"
       RATE_LIMITER_STORE    = "redis"
       REDIS_HOST            = var.redis_host
@@ -85,7 +90,7 @@ locals {
         }
       }
       healthCheck = {
-        command     = ["CMD-SHELL", "wget -qO- http://localhost:${local.directus_port}${var.healthcheck_path} | grep -q 'ok' || exit 1"]
+        command     = ["CMD-SHELL", "wget -qO- http://localhost:${local.directus_port}${local.healthcheck_path} | grep -q 'ok' || exit 1"]
         interval    = 60
         timeout     = 10
         retries     = 10
@@ -114,10 +119,22 @@ resource "aws_s3_bucket" "directus" {
   tags = var.tags
 }
 
-resource "aws_s3_bucket" "directus_lb_logs" {
-  count = var.enable_access_logs ? 1 : 0
+module "s3_bucket_for_logs" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "4.1.2"
 
   bucket = "${local.truncated_application_name}-lb-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
+  acl    = "log-delivery-write"
+
+  # Allow deletion of non-empty bucket
+  force_destroy = true
+
+  create_bucket = var.enable_alb_access_logs ? true : false
+
+  control_object_ownership = true
+  object_ownership         = "ObjectWriter"
+
+  attach_elb_log_delivery_policy = true # Required for ALB logs
 
   tags = var.tags
 }
@@ -253,11 +270,12 @@ resource "aws_security_group" "lb_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Allow HTTP traffic"
-    from_port   = local.is_https_enabled ? 443 : 80
-    to_port     = local.is_https_enabled ? 443 : 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Allow ${local.is_https_enabled ? "HTTPS" : "HTTP"} traffic"
+    from_port       = local.is_https_enabled ? 443 : 80
+    to_port         = local.is_https_enabled ? 443 : 80
+    protocol        = "tcp"
+    cidr_blocks     = var.load_balancer_allowed_cidr_blocks
+    prefix_list_ids = var.load_balancer_prefix_list_ids
   }
 
   egress {
@@ -286,9 +304,9 @@ resource "aws_lb" "directus" {
   enable_deletion_protection = false
 
   dynamic "access_logs" {
-    for_each = var.enable_access_logs ? [1] : []
+    for_each = var.enable_alb_access_logs ? [1] : []
     content {
-      bucket  = aws_s3_bucket.directus_lb_logs[0].id
+      bucket  = module.s3_bucket_for_logs.s3_bucket_id
       prefix  = "alb-access-logs"
       enabled = true
     }
@@ -300,12 +318,12 @@ resource "aws_lb" "directus" {
 resource "aws_lb_target_group" "directus_lb_target_group" {
   name_prefix = "drctus"
   target_type = "ip"
-  port        = local.is_https_enabled ? 443 : 80
-  protocol    = local.is_https_enabled ? "HTTPS" : "HTTP"
+  port        = 8055
+  protocol    = "HTTP"
   vpc_id      = var.vpc_id
 
   health_check {
-    path                = var.healthcheck_path
+    path                = local.healthcheck_path
     protocol            = "HTTP"
     matcher             = "200,304"
     interval            = 30
@@ -332,6 +350,8 @@ resource "aws_lb_listener" "directus_lb_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.directus_lb_target_group.arn
   }
+
+  depends_on = [var.ssl_certificate_arn]
 
   tags = var.tags
 }
@@ -393,6 +413,8 @@ resource "aws_appautoscaling_target" "autoscaling_target" {
   resource_id        = "service/${local.cluster_name}/${local.service_name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  depends_on = [aws_ecs_service.directus]
 }
 
 resource "aws_appautoscaling_policy" "autoscaling_policy_memory" {
@@ -410,6 +432,8 @@ resource "aws_appautoscaling_policy" "autoscaling_policy_memory" {
 
     target_value = var.autoscaling.memory_threshold
   }
+
+  depends_on = [aws_ecs_service.directus]
 }
 
 resource "aws_appautoscaling_policy" "autoscaling_policy_cpu" {
@@ -427,4 +451,6 @@ resource "aws_appautoscaling_policy" "autoscaling_policy_cpu" {
 
     target_value = var.autoscaling.cpu_threshold
   }
+
+  depends_on = [aws_ecs_service.directus]
 }

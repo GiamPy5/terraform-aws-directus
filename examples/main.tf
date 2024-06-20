@@ -12,10 +12,12 @@ data "aws_availability_zones" "available" {}
 locals {
   name = "terraform-aws-directus"
 
-  domain_name             = "algofantacalcio.io"
+  domain_name             = "example.com"
   application_domain_name = "directus.${local.domain_name}"
 
   region = "eu-central-1"
+
+  super_secret_token = "super_secret_token"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -71,8 +73,18 @@ module "directus" {
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-  healthcheck_path = "/server/health"
-  image_tag        = "10.12"
+  image_tag = "10.12"
+
+  # This disables the default behavior of the Load Balancer, it's heavily recommended when you want to use CloudFront.
+  # See: https://logan-cox.com/posts/secure_alb/
+  load_balancer_allowed_cidr_blocks = []
+
+  # This allows connections only from CloudFront
+  load_balancer_prefix_list_ids = [
+    data.aws_ec2_managed_prefix_list.cloudfront_prefix_list.id
+  ]
+
+  enable_alb_access_logs = true
 
   autoscaling = {
     enable           = true
@@ -208,6 +220,14 @@ data "aws_route53_zone" "hosted_zone" {
   name = local.domain_name
 }
 
+resource "aws_route53_record" "loadbalancer_cname" {
+  name    = "lb.${local.application_domain_name}"
+  zone_id = data.aws_route53_zone.hosted_zone.zone_id
+  type    = "CNAME"
+  ttl     = 60
+  records = [module.directus.load_balancer_dns_name]
+}
+
 resource "aws_route53_record" "websiteurl" {
   name    = local.application_domain_name
   zone_id = data.aws_route53_zone.hosted_zone.zone_id
@@ -222,7 +242,7 @@ resource "aws_route53_record" "websiteurl" {
 # Domain Certificate
 resource "aws_acm_certificate" "cert" {
   domain_name               = local.application_domain_name
-  subject_alternative_names = [module.directus.load_balancer_dns_name]
+  subject_alternative_names = ["*.${local.application_domain_name}"]
   validation_method         = "DNS"
   tags                      = local.tags
 
@@ -258,7 +278,7 @@ resource "aws_acm_certificate" "cert_cloudfront" {
   provider = aws.us-east-1
 
   domain_name               = local.application_domain_name
-  subject_alternative_names = [module.directus.load_balancer_dns_name]
+  subject_alternative_names = ["*.${local.application_domain_name}"]
   validation_method         = "DNS"
   tags                      = local.tags
 }
@@ -290,8 +310,12 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
   enabled = true
   aliases = [local.application_domain_name]
   origin {
-    domain_name = module.directus.load_balancer_dns_name
-    origin_id   = module.directus.load_balancer_dns_name
+    domain_name = "lb.${local.application_domain_name}"
+    origin_id   = "lb.${local.application_domain_name}"
+    custom_header {
+      name  = "X-CloudFront-Token"
+      value = local.super_secret_token
+    }
     custom_origin_config {
       http_port                = 80
       https_port               = 443
@@ -304,12 +328,12 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
     }
   }
 
-  default_root_object = "/server/info"
+  default_root_object = "server/info"
 
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods         = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id       = module.directus.load_balancer_dns_name
+    target_origin_id       = "lb.${local.application_domain_name}"
     viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
       headers      = []
@@ -330,5 +354,33 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
     acm_certificate_arn      = aws_acm_certificate.cert_cloudfront.arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
+  }
+}
+
+data "aws_ec2_managed_prefix_list" "cloudfront_prefix_list" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}
+
+resource "aws_lb_listener_rule" "additional_listener" {
+  listener_arn = module.directus.load_balancer_listener_arn
+
+  action {
+    type             = "forward"
+    target_group_arn = module.directus.load_balancer_target_group_arn
+  }
+
+  condition {
+    host_header {
+      values = [
+        aws_route53_record.websiteurl.name
+      ]
+    }
+  }
+
+  condition {
+    http_header {
+      http_header_name = "X-CloudFront-Token"
+      values           = [local.super_secret_token]
+    }
   }
 }
