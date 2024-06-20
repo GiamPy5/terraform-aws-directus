@@ -4,10 +4,6 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_docs
-        args:
-          - --args=--config=.terraform-docs.yml
-        args:
-          - '--args=--lockfile=false'
       - id: terraform_tflint
         args:
           - '--args=--only=terraform_deprecated_interpolation'
@@ -25,9 +21,4 @@ repos:
           - '--args=--only=terraform_workspace_remote'
           - '--args=--only=terraform_unused_required_providers'
       - id: terraform_validate
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: check-merge-conflict
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
+

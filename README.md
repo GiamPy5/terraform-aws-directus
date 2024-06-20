@@ -1,8 +1,18 @@
-# Terraform AWS Directus Module
+# Terraform AWS Directus Module 🚀
 
-This Terraform module deploys Directus on an AWS Fargate ECS cluster.
+This Terraform module simplifies the deployment of [Directus](https://directus.io/) on an AWS Fargate ECS cluster.
 
-## Usage
+## 🌟 Features
+
+- **Seamless Deployment** of Directus on AWS Fargate ECS
+- **Automatic Scaling** and Load Balancing
+- **High Availability** and Fault Tolerance
+- **Customizable Configuration** Options
+- **S3 Integration** for Static Assets
+
+## 🚀 Quick Start
+
+Deploy Directus quickly and easily by including this module in your Terraform configuration:
 
 ```hcl
 module "directus" {
@@ -55,40 +65,31 @@ module "directus" {
   tags = {
     Application = "Directus"
     Environment = "Test"
-  } # Change these tags to your prefered tags
-
+  } # Change these tags to your preferred tags
+}
 ```
 
-For further information on a complete example (including all dependencies, such as database inputs) check [here](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples).
+For a complete example, including all dependencies like database inputs, check out the [examples](https://github.com/GiamPy5/terraform-aws-directus/tree/main/examples) section.
 
-## Features
+## 📋 Prerequisites
 
-- Easy deployment of Directus on AWS Fargate ECS
-- Automatic scaling and load balancing
-- Highly available and fault-tolerant architecture
-- Customizable configuration options
-- S3 integration for static assets
+Before using this module, ensure you have the following:
 
-## To-Be-Done
+- An **AWS account** 🛠️
+- **Terraform installed** on your machine 🌐
+- Basic knowledge of **AWS services** and **Terraform** 📚
 
-- Implement Redis to allow multi-container deployment (currently only one is supported) (https://docs.directus.io/self-hosted/config-options.html#redis)
-- Implement Amazon Cognito authentication
-- HTTPS support
+## 📅 Roadmap
 
-## Prerequisites
+- [ ] Implement Amazon Cognito authentication
 
-Before using this module, make sure you have the following prerequisites:
+## 📚 Module Documentation
 
-- AWS account
-- Terraform installed
-- Basic knowledge of AWS services and Terraform
-
-<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.30 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0 |
 
@@ -96,14 +97,15 @@ Before using this module, make sure you have the following prerequisites:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.30 |
-| <a name="provider_random"></a> [random](#provider\_random) | >= 3.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.54.1 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.6.2 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_ecs"></a> [ecs](#module\_ecs) | terraform-aws-modules/ecs/aws | 5.11.2 |
+| <a name="module_s3_bucket_for_logs"></a> [s3\_bucket\_for\_logs](#module\_s3\_bucket\_for\_logs) | terraform-aws-modules/s3-bucket/aws | 4.1.2 |
 
 ## Resources
 
@@ -122,8 +124,8 @@ Before using this module, make sure you have the following prerequisites:
 | [aws_iam_user.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
 | [aws_iam_user_policy.lb_ro](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy) | resource |
 | [aws_lb.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb) | resource |
-| [aws_lb_listener.directus_lb_listener_http](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
-| [aws_lb_target_group.directus_lb_target_group_http](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
+| [aws_lb_listener.directus_lb_listener](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_listener) | resource |
+| [aws_lb_target_group.directus_lb_target_group](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb_target_group) | resource |
 | [aws_s3_bucket.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_secretsmanager_secret.directus_admin_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.directus_secret](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
@@ -155,11 +157,14 @@ Before using this module, make sure you have the following prerequisites:
 | <a name="input_create_cloudwatch_logs_group"></a> [create\_cloudwatch\_logs\_group](#input\_create\_cloudwatch\_logs\_group) | Whether to create a CloudWatch Logs group | `bool` | `false` | no |
 | <a name="input_create_s3_bucket"></a> [create\_s3\_bucket](#input\_create\_s3\_bucket) | Whether to create an S3 bucket | `bool` | `false` | no |
 | <a name="input_ecs_service_enable_execute_command"></a> [ecs\_service\_enable\_execute\_command](#input\_ecs\_service\_enable\_execute\_command) | Whether to enable ECS service execute command | `bool` | `false` | no |
+| <a name="input_enable_alb_access_logs"></a> [enable\_alb\_access\_logs](#input\_enable\_alb\_access\_logs) | Whether to enable access logs of the Load Balancer | `bool` | `false` | no |
 | <a name="input_enable_ses_emails_sending"></a> [enable\_ses\_emails\_sending](#input\_enable\_ses\_emails\_sending) | Whether to enable sending emails using SES | `bool` | `false` | no |
 | <a name="input_force_new_ecs_deployment_on_apply"></a> [force\_new\_ecs\_deployment\_on\_apply](#input\_force\_new\_ecs\_deployment\_on\_apply) | Whether to force a new deployment of the ECS service on apply | `bool` | `false` | no |
-| <a name="input_healthcheck_path"></a> [healthcheck\_path](#input\_healthcheck\_path) | The path of the healthcheck endpoint | `string` | `"/server/ping"` | no |
 | <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | The tag of the Docker image | `string` | `"latest"` | no |
+| <a name="input_load_balancer_allowed_cidr_blocks"></a> [load\_balancer\_allowed\_cidr\_blocks](#input\_load\_balancer\_allowed\_cidr\_blocks) | The CIDR blocks allowed to access the Load Balancer | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
+| <a name="input_load_balancer_prefix_list_ids"></a> [load\_balancer\_prefix\_list\_ids](#input\_load\_balancer\_prefix\_list\_ids) | The prefix list IDs allowed to access the Load Balancer | `list(string)` | `[]` | no |
 | <a name="input_memory"></a> [memory](#input\_memory) | The amount of memory to reserve for the Directus service | `number` | `4096` | no |
+| <a name="input_public_url"></a> [public\_url](#input\_public\_url) | The public URL of the Directus service | `string` | `""` | no |
 | <a name="input_rds_database_engine"></a> [rds\_database\_engine](#input\_rds\_database\_engine) | The engine of the RDS database | `string` | n/a | yes |
 | <a name="input_rds_database_host"></a> [rds\_database\_host](#input\_rds\_database\_host) | The host of the RDS database | `string` | n/a | yes |
 | <a name="input_rds_database_name"></a> [rds\_database\_name](#input\_rds\_database\_name) | The Name of the RDS database | `string` | n/a | yes |
@@ -170,6 +175,7 @@ Before using this module, make sure you have the following prerequisites:
 | <a name="input_redis_port"></a> [redis\_port](#input\_redis\_port) | The port of the Redis server | `number` | `6379` | no |
 | <a name="input_redis_username"></a> [redis\_username](#input\_redis\_username) | The username of the Redis server | `string` | `"default"` | no |
 | <a name="input_s3_bucket_name"></a> [s3\_bucket\_name](#input\_s3\_bucket\_name) | The name of the S3 bucket | `string` | `""` | no |
+| <a name="input_ssl_certificate_arn"></a> [ssl\_certificate\_arn](#input\_ssl\_certificate\_arn) | The ARN of the SSL certificate | `string` | `""` | no |
 | <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | The IDs of the subnets | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to apply to the resources | `map(string)` | `{}` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | The ID of the VPC | `string` | n/a | yes |
@@ -179,14 +185,15 @@ Before using this module, make sure you have the following prerequisites:
 | Name | Description |
 |------|-------------|
 | <a name="output_load_balancer_dns_name"></a> [load\_balancer\_dns\_name](#output\_load\_balancer\_dns\_name) | The DNS name of the load balancer |
+| <a name="output_load_balancer_listener_arn"></a> [load\_balancer\_listener\_arn](#output\_load\_balancer\_listener\_arn) | The ARN of the load balancer listener |
+| <a name="output_load_balancer_target_group_arn"></a> [load\_balancer\_target\_group\_arn](#output\_load\_balancer\_target\_group\_arn) | The ARN of the load balancer target group |
 | <a name="output_s3_bucket_arn"></a> [s3\_bucket\_arn](#output\_s3\_bucket\_arn) | The ARN of the S3 bucket |
 | <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | The name of the S3 bucket |
-<!-- END_TF_DOCS -->
 
-## Contributing
+## 🤝 Contributing
 
-Contributions to this module are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+Contributions are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/GiamPy5/terraform-aws-directus).
 
-## License
+## 📄 License
 
 This module is open source and available under the [MIT License](https://opensource.org/licenses/MIT).

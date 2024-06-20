@@ -4,10 +4,40 @@ variable "create_s3_bucket" {
   default     = false
 }
 
+variable "public_url" {
+  description = "The public URL of the Directus service"
+  type        = string
+  default     = ""
+}
+
+variable "load_balancer_allowed_cidr_blocks" {
+  description = "The CIDR blocks allowed to access the Load Balancer"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+}
+
+variable "load_balancer_prefix_list_ids" {
+  description = "The prefix list IDs allowed to access the Load Balancer"
+  type        = list(string)
+  default     = []
+}
+
 variable "create_cloudwatch_logs_group" {
   description = "Whether to create a CloudWatch Logs group"
   type        = bool
   default     = false
+}
+
+variable "enable_alb_access_logs" {
+  description = "Whether to enable access logs of the Load Balancer"
+  type        = bool
+  default     = false
+}
+
+variable "ssl_certificate_arn" {
+  description = "The ARN of the SSL certificate"
+  type        = string
+  default     = ""
 }
 
 variable "enable_ses_emails_sending" {
@@ -145,12 +175,6 @@ variable "admin_password" {
   type        = string
   default     = ""
   sensitive   = true
-}
-
-variable "healthcheck_path" {
-  description = "The path of the healthcheck endpoint"
-  type        = string
-  default     = "/server/ping"
 }
 
 variable "vpc_id" {
