@@ -34,7 +34,11 @@ jobs:
     steps:
       # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
       - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
+        run: |
+          rm -rf /opt/hostedtoolcache/CodeQL
+          rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
+          rm -rf /opt/hostedtoolcache/Ruby
+          rm -rf /opt/hostedtoolcache/go
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,13 +49,23 @@ jobs:
         with:
           directory: ${{ matrix.directory }}
 
-      - name: Pre-commit Terraform ${{ steps.minMax.outputs.maxVersion }}
+      - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
+        # Run only validate pre-commit check on min version supported
+        if: ${{ matrix.directory !=  '.' }}
         uses: clowdhaus/terraform-composite-actions/pre-commit@v1.9.0
         with:
           terraform-version: ${{ steps.minMax.outputs.minVersion }}
           tflint-version: ${{ env.TFLINT_VERSION }}
-          terraform-docs-version: ${{ env.TERRAFORM_DOCS_VERSION }}
-          install-hcledit: true
+          args: 'terraform_validate --color=always --show-diff-on-failure --files ${{ matrix.directory }}/*'
+
+      - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
+        # Run only validate pre-commit check on min version supported
+        if: ${{ matrix.directory ==  '.' }}
+        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.9.0
+        with:
+          terraform-version: ${{ steps.minMax.outputs.minVersion }}
+          tflint-version: ${{ env.TFLINT_VERSION }}
+          args: 'terraform_validate --color=always --show-diff-on-failure --files $(ls *.tf)'
 
   preCommitMaxVersion:
     name: Max TF pre-commit
@@ -60,7 +74,11 @@ jobs:
     steps:
       # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
       - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
+        run: |
+          rm -rf /opt/hostedtoolcache/CodeQL
+          rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
+          rm -rf /opt/hostedtoolcache/Ruby
+          rm -rf /opt/hostedtoolcache/go
 
       - name: Checkout
         uses: actions/checkout@v4
