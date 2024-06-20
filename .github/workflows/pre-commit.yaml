@@ -34,11 +34,7 @@ jobs:
     steps:
       # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
       - name: Delete huge unnecessary tools folder
-        run: |
-          rm -rf /opt/hostedtoolcache/CodeQL
-          rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
-          rm -rf /opt/hostedtoolcache/Ruby
-          rm -rf /opt/hostedtoolcache/go
+        run: rm -rf /opt/hostedtoolcache
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +47,6 @@ jobs:
 
       - name: Pre-commit Terraform ${{ steps.minMax.outputs.maxVersion }}
         uses: clowdhaus/terraform-composite-actions/pre-commit@v1.9.0
-        if: ${{ matrix.directory !=  '.' }}
         with:
           terraform-version: ${{ steps.minMax.outputs.minVersion }}
           tflint-version: ${{ env.TFLINT_VERSION }}
@@ -65,11 +60,7 @@ jobs:
     steps:
       # https://github.com/orgs/community/discussions/25678#discussioncomment-5242449
       - name: Delete huge unnecessary tools folder
-        run: |
-          rm -rf /opt/hostedtoolcache/CodeQL
-          rm -rf /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
-          rm -rf /opt/hostedtoolcache/Ruby
-          rm -rf /opt/hostedtoolcache/go
+        run: rm -rf /opt/hostedtoolcache
 
       - name: Checkout
         uses: actions/checkout@v4
