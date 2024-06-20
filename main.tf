@@ -116,19 +116,19 @@ resource "aws_s3_bucket" "directus" {
 
   bucket = local.s3_bucket_name
 
-  dynamic "server_side_encryption_configuration" {
-    for_each = var.kms_key_id != "" ? [1] : []
-    content {
-      rule {
-        apply_server_side_encryption_by_default {
-          sse_algorithm     = "aws:kms"
-          kms_master_key_id = var.kms_key_id
-        }
-      }
+  tags = var.tags
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
+  count  = var.create_s3_bucket && var.kms_key_id != "" ? 1 : 0
+  bucket = aws_s3_bucket.directus[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.kms_key_id
+      sse_algorithm     = "aws:kms"
     }
   }
-
-  tags = var.tags
 }
 
 module "s3_bucket_for_logs" {
@@ -150,7 +150,7 @@ module "s3_bucket_for_logs" {
 
   tags = var.tags
 }
-resource "aws_s3_bucket_versioning" "versioning_example" {
+resource "aws_s3_bucket_versioning" "directus_bucket_versioning" {
   count  = var.create_s3_bucket && var.enable_s3_bucket_versioning ? 1 : 0
   bucket = aws_s3_bucket.directus[0].id
   versioning_configuration {

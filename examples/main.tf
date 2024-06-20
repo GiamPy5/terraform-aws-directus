@@ -73,6 +73,8 @@ module "directus" {
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
+  kms_key_id = aws_kms_key.directus.id
+
   image_tag = "10.12"
 
   # This disables the default behavior of the Load Balancer, it's heavily recommended when you want to use CloudFront.
@@ -105,6 +107,11 @@ module "directus" {
 ################################################################################
 # Supporting Resources
 ################################################################################
+
+# Encryption
+resource "aws_kms_key" "directus" {
+  description = "${local.name}-kms-key"
+}
 
 # Network
 module "vpc" {
