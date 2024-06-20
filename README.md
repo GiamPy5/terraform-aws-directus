@@ -85,6 +85,7 @@ Before using this module, ensure you have the following:
 
 ## 📚 Module Documentation
 
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 | Name | Version |
@@ -161,9 +162,11 @@ Before using this module, ensure you have the following:
 | <a name="input_create_s3_bucket"></a> [create\_s3\_bucket](#input\_create\_s3\_bucket) | Whether to create an S3 bucket | `bool` | `false` | no |
 | <a name="input_ecs_service_enable_execute_command"></a> [ecs\_service\_enable\_execute\_command](#input\_ecs\_service\_enable\_execute\_command) | Whether to enable ECS service execute command | `bool` | `false` | no |
 | <a name="input_enable_alb_access_logs"></a> [enable\_alb\_access\_logs](#input\_enable\_alb\_access\_logs) | Whether to enable access logs of the Load Balancer | `bool` | `false` | no |
+| <a name="input_enable_s3_bucket_versioning"></a> [enable\_s3\_bucket\_versioning](#input\_enable\_s3\_bucket\_versioning) | Whether to enable S3 bucket versioning | `bool` | `true` | no |
 | <a name="input_enable_ses_emails_sending"></a> [enable\_ses\_emails\_sending](#input\_enable\_ses\_emails\_sending) | Whether to enable sending emails using SES | `bool` | `false` | no |
 | <a name="input_force_new_ecs_deployment_on_apply"></a> [force\_new\_ecs\_deployment\_on\_apply](#input\_force\_new\_ecs\_deployment\_on\_apply) | Whether to force a new deployment of the ECS service on apply | `bool` | `false` | no |
 | <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | The tag of the Docker image | `string` | `"latest"` | no |
+| <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | The ID of the KMS key | `string` | `""` | no |
 | <a name="input_load_balancer_allowed_cidr_blocks"></a> [load\_balancer\_allowed\_cidr\_blocks](#input\_load\_balancer\_allowed\_cidr\_blocks) | The CIDR blocks allowed to access the Load Balancer | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
 | <a name="input_load_balancer_prefix_list_ids"></a> [load\_balancer\_prefix\_list\_ids](#input\_load\_balancer\_prefix\_list\_ids) | The prefix list IDs allowed to access the Load Balancer | `list(string)` | `[]` | no |
 | <a name="input_memory"></a> [memory](#input\_memory) | The amount of memory to reserve for the Directus service | `number` | `4096` | no |
@@ -178,6 +181,7 @@ Before using this module, ensure you have the following:
 | <a name="input_redis_port"></a> [redis\_port](#input\_redis\_port) | The port of the Redis server | `number` | `6379` | no |
 | <a name="input_redis_username"></a> [redis\_username](#input\_redis\_username) | The username of the Redis server | `string` | `"default"` | no |
 | <a name="input_s3_bucket_name"></a> [s3\_bucket\_name](#input\_s3\_bucket\_name) | The name of the S3 bucket | `string` | `""` | no |
+| <a name="input_s3_bucket_versioning_configuration"></a> [s3\_bucket\_versioning\_configuration](#input\_s3\_bucket\_versioning\_configuration) | S3 bucket versioning configuration | <pre>object({<br>    mfa_delete = string<br>  })</pre> | <pre>{<br>  "mfa_delete": "Disabled"<br>}</pre> | no |
 | <a name="input_ssl_certificate_arn"></a> [ssl\_certificate\_arn](#input\_ssl\_certificate\_arn) | The ARN of the SSL certificate | `string` | `""` | no |
 | <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | The IDs of the subnets | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to apply to the resources | `map(string)` | `{}` | no |
@@ -192,6 +196,7 @@ Before using this module, ensure you have the following:
 | <a name="output_load_balancer_target_group_arn"></a> [load\_balancer\_target\_group\_arn](#output\_load\_balancer\_target\_group\_arn) | The ARN of the load balancer target group |
 | <a name="output_s3_bucket_arn"></a> [s3\_bucket\_arn](#output\_s3\_bucket\_arn) | The ARN of the S3 bucket |
 | <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | The name of the S3 bucket |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 ## 🤝 Contributing
 
