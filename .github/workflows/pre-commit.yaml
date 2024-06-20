@@ -6,8 +6,8 @@ on:
       - main
 
 env:
-  TERRAFORM_DOCS_VERSION: v0.16.0
-  TFLINT_VERSION: v0.50.3
+  TERRAFORM_DOCS_VERSION: v0.18.0
+  TFLINT_VERSION: v0.51.1
 
 jobs:
   collectInputs:
