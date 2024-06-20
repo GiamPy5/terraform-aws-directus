@@ -4,8 +4,6 @@ repos:
     hooks:
       - id: terraform_fmt
       - id: terraform_docs
-        args:
-          - --args=--config=.terraform-docs.yml
       - id: terraform_tflint
         args:
           - '--args=--only=terraform_deprecated_interpolation'
