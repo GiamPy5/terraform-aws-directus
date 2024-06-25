@@ -88,7 +88,7 @@ module "directus" {
 
   enable_alb_access_logs = true
 
-  enable_s3_bucket_versioning = true
+  enable_s3_bucket_versioning = false
 
   autoscaling = {
     enable           = true

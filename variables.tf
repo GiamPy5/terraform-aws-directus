@@ -22,6 +22,12 @@ variable "load_balancer_prefix_list_ids" {
   default     = []
 }
 
+variable "enable_ecs_volume" {
+  description = "Whether to enable ECS volume"
+  type        = bool
+  default     = false
+}
+
 variable "create_cloudwatch_logs_group" {
   description = "Whether to create a CloudWatch Logs group"
   type        = bool

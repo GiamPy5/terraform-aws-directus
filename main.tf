@@ -6,6 +6,8 @@ locals {
 
   truncated_application_name = substr(var.application_name, 0, 20)
 
+  kms_key_arn = var.kms_key_id != "" ? "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/${var.kms_key_id}" : ""
+
   s3_bucket_arn = var.create_s3_bucket ? aws_s3_bucket.directus[0].arn : data.aws_s3_bucket.directus[0].arn
   s3_bucket_id  = var.create_s3_bucket ? aws_s3_bucket.directus[0].id : data.aws_s3_bucket.directus[0].id
 
@@ -113,6 +115,8 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "directus" {
   count = var.create_s3_bucket ? 1 : 0
+
+  force_destroy = true
 
   bucket = local.s3_bucket_name
 
@@ -394,6 +398,17 @@ resource "aws_ecs_service" "directus" {
   enable_execute_command            = var.ecs_service_enable_execute_command
 
   force_new_deployment = var.force_new_ecs_deployment_on_apply
+
+  dynamic "volume_configuration" {
+    for_each = var.enable_ecs_volume ? [1] : [0]
+    content {
+      name = "${local.service_name}-ecs-volume"
+      managed_ebs_volume {
+        role_arn   = aws_iam_role.ecs_ebs_role.arn
+        kms_key_id = local.kms_key_arn
+      }
+    }
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.directus_lb_target_group.arn
