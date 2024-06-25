@@ -51,6 +51,7 @@ module "directus" {
 
   ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
   enable_ses_emails_sending          = true
+  enable_ecs_volume                  = false
   force_new_ecs_deployment_on_apply  = true
 
   # Add additional custom configuration here (https://docs.directus.io/self-hosted/config-options.html#configuration-options)
@@ -73,6 +74,8 @@ module "directus" {
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
+  kms_key_id = aws_kms_key.directus.id
+
   image_tag = "10.12"
 
   # This disables the default behavior of the Load Balancer, it's heavily recommended when you want to use CloudFront.
@@ -85,6 +88,8 @@ module "directus" {
   ]
 
   enable_alb_access_logs = true
+
+  enable_s3_bucket_versioning = false
 
   autoscaling = {
     enable           = true
@@ -103,6 +108,11 @@ module "directus" {
 ################################################################################
 # Supporting Resources
 ################################################################################
+
+# Encryption
+resource "aws_kms_key" "directus" {
+  description = "${local.name}-kms-key"
+}
 
 # Network
 module "vpc" {

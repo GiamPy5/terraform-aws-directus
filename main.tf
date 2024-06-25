@@ -6,6 +6,8 @@ locals {
 
   truncated_application_name = substr(var.application_name, 0, 20)
 
+  kms_key_arn = var.kms_key_id != "" ? "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/${var.kms_key_id}" : ""
+
   s3_bucket_arn = var.create_s3_bucket ? aws_s3_bucket.directus[0].arn : data.aws_s3_bucket.directus[0].arn
   s3_bucket_id  = var.create_s3_bucket ? aws_s3_bucket.directus[0].id : data.aws_s3_bucket.directus[0].id
 
@@ -114,9 +116,23 @@ data "aws_caller_identity" "current" {}
 resource "aws_s3_bucket" "directus" {
   count = var.create_s3_bucket ? 1 : 0
 
+  force_destroy = true
+
   bucket = local.s3_bucket_name
 
   tags = var.tags
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
+  count  = var.create_s3_bucket && var.kms_key_id != "" ? 1 : 0
+  bucket = aws_s3_bucket.directus[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = var.kms_key_id
+      sse_algorithm     = "aws:kms"
+    }
+  }
 }
 
 module "s3_bucket_for_logs" {
@@ -138,6 +154,14 @@ module "s3_bucket_for_logs" {
 
   tags = var.tags
 }
+resource "aws_s3_bucket_versioning" "directus_bucket_versioning" {
+  count  = var.create_s3_bucket && var.enable_s3_bucket_versioning ? 1 : 0
+  bucket = aws_s3_bucket.directus[0].id
+  versioning_configuration {
+    status     = "Enabled"
+    mfa_delete = var.s3_bucket_versioning_configuration.mfa_delete
+  }
+}
 
 resource "random_password" "directus_secret" {
   length           = 16
@@ -155,6 +179,8 @@ resource "random_password" "directus_admin_password" {
 resource "aws_secretsmanager_secret" "directus_serviceuser_secret" {
   name_prefix = "${var.application_name}-${local.service_name}-serviceuser-secret"
 
+  kms_key_id = var.kms_key_id
+
   tags = var.tags
 }
 
@@ -169,6 +195,8 @@ resource "aws_secretsmanager_secret_version" "directus_serviceuser_secret_versio
 resource "aws_secretsmanager_secret" "directus_secret" {
   name_prefix = "${var.application_name}-${local.service_name}-secret"
 
+  kms_key_id = var.kms_key_id
+
   tags = var.tags
 }
 
@@ -179,6 +207,8 @@ resource "aws_secretsmanager_secret_version" "directus_secret_version" {
 
 resource "aws_secretsmanager_secret" "directus_admin_password" {
   name_prefix = "${var.application_name}-${local.service_name}-admin-password"
+
+  kms_key_id = var.kms_key_id
 
   tags = var.tags
 }
@@ -368,6 +398,17 @@ resource "aws_ecs_service" "directus" {
   enable_execute_command            = var.ecs_service_enable_execute_command
 
   force_new_deployment = var.force_new_ecs_deployment_on_apply
+
+  dynamic "volume_configuration" {
+    for_each = var.enable_ecs_volume ? [1] : []
+    content {
+      name = "${local.service_name}-ecs-volume"
+      managed_ebs_volume {
+        role_arn   = aws_iam_role.ecs_ebs_role[0].arn
+        kms_key_id = local.kms_key_arn
+      }
+    }
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.directus_lb_target_group.arn

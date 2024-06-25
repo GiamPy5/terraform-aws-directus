@@ -22,6 +22,12 @@ variable "load_balancer_prefix_list_ids" {
   default     = []
 }
 
+variable "enable_ecs_volume" {
+  description = "Whether to enable ECS volume"
+  type        = bool
+  default     = false
+}
+
 variable "create_cloudwatch_logs_group" {
   description = "Whether to create a CloudWatch Logs group"
   type        = bool
@@ -44,6 +50,28 @@ variable "enable_ses_emails_sending" {
   description = "Whether to enable sending emails using SES"
   type        = bool
   default     = false
+}
+
+variable "enable_s3_bucket_versioning" {
+  description = "Whether to enable S3 bucket versioning"
+  type        = bool
+  default     = true
+}
+
+variable "s3_bucket_versioning_configuration" {
+  type = object({
+    mfa_delete = string
+  })
+  description = "S3 bucket versioning configuration"
+  default = {
+    mfa_delete = "Disabled"
+  }
+}
+
+variable "kms_key_id" {
+  description = "The ID of the KMS key"
+  type        = string
+  default     = ""
 }
 
 variable "ecs_service_enable_execute_command" {
