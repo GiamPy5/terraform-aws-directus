@@ -5,7 +5,8 @@ data "aws_s3_bucket" "directus" {
 }
 
 resource "aws_iam_role" "ecs_ebs_role" {
-  name = "${var.application_name}-ecs-ebs-role"
+  count = var.enable_ecs_volume ? 1 : 0
+  name  = "${var.application_name}-ecs-ebs-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -22,7 +23,8 @@ resource "aws_iam_role" "ecs_ebs_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_ebs_role_policy" {
-  role       = aws_iam_role.ecs_ebs_role.name
+  count      = var.enable_ecs_volume ? 1 : 0
+  role       = aws_iam_role.ecs_ebs_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
 }
 

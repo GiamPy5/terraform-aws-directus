@@ -51,6 +51,7 @@ module "directus" {
 
   ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
   enable_ses_emails_sending          = true
+  enable_ecs_volume                  = false
   force_new_ecs_deployment_on_apply  = true
 
   # Add additional custom configuration here (https://docs.directus.io/self-hosted/config-options.html#configuration-options)

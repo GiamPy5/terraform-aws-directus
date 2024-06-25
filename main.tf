@@ -400,11 +400,11 @@ resource "aws_ecs_service" "directus" {
   force_new_deployment = var.force_new_ecs_deployment_on_apply
 
   dynamic "volume_configuration" {
-    for_each = var.enable_ecs_volume ? [1] : [0]
+    for_each = var.enable_ecs_volume ? [1] : []
     content {
       name = "${local.service_name}-ecs-volume"
       managed_ebs_volume {
-        role_arn   = aws_iam_role.ecs_ebs_role.arn
+        role_arn   = aws_iam_role.ecs_ebs_role[0].arn
         kms_key_id = local.kms_key_arn
       }
     }
