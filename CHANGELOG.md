@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.0...v0.3.1) (2024-06-25)
+
+
+### Bug Fixes
+
+* Fixes tfsec warnings ([#7](https://github.com/GiamPy5/terraform-aws-directus/issues/7)) ([13f783b](https://github.com/GiamPy5/terraform-aws-directus/commit/13f783b1331966ca3e1c37ce369a5442c8fb670c))
+
 ## [0.3.0](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.2.0...v0.3.0) (2024-06-20)
 
 
