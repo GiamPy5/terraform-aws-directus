@@ -22,6 +22,12 @@ variable "load_balancer_prefix_list_ids" {
   default     = []
 }
 
+variable "enable_xray_integration" {
+  description = "Whether to enable X-Ray integration"
+  type        = bool
+  default     = false
+}
+
 variable "enable_ecs_volume" {
   description = "Whether to enable ECS volume"
   type        = bool
