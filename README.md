@@ -98,8 +98,8 @@ Before using this module, ensure you have the following:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.54.1 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.6.2 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.30 |
+| <a name="provider_random"></a> [random](#provider\_random) | >= 3.0 |
 
 ## Modules
 
