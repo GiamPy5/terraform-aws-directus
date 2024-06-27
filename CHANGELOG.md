@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.1...v0.3.2) (2024-06-27)
+
+
+### Bug Fixes
+
+* Fixes KMS permissions for ECS task container ([d415eb9](https://github.com/GiamPy5/terraform-aws-directus/commit/d415eb97ab355a600e27cf039f57d3f40980ed52))
+
 ## [0.3.1](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.0...v0.3.1) (2024-06-25)
 
 
