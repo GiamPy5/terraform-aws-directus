@@ -22,3 +22,8 @@ output "load_balancer_listener_arn" {
   value       = aws_lb_listener.directus_lb_listener.arn
   description = "The ARN of the load balancer listener"
 }
+
+output "public_url" {
+  value       = local.public_url
+  description = "The public URL of the Directus service"
+}

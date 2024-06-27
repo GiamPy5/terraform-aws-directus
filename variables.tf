@@ -68,6 +68,12 @@ variable "s3_bucket_versioning_configuration" {
   }
 }
 
+variable "enable_kms_encryption" {
+  description = "Whether to enable KMS encryption"
+  type        = bool
+  default     = false
+}
+
 variable "kms_key_id" {
   description = "The ID of the KMS key"
   type        = string

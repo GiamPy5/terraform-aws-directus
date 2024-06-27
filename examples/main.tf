@@ -74,7 +74,8 @@ module "directus" {
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
   s3_bucket_name   = "terraform-aws-directus-${local.region}"
 
-  kms_key_id = aws_kms_key.directus.id
+  enable_kms_encryption = true
+  kms_key_id            = aws_kms_key.directus.id
 
   image_tag = "10.12"
 
