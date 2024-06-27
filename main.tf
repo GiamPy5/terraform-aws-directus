@@ -13,7 +13,11 @@ locals {
 
   s3_bucket_name = var.s3_bucket_name != "" ? var.s3_bucket_name : "${local.truncated_application_name}-${local.service_name}-bucket-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
 
+  cognito_issuer_url = var.enable_cognito_authentication ? "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/openid-configuration" : ""
+
   directus_port = 8055
+
+  openid_callback_url = "${local.public_url}/auth/login/cognito/callback"
 
   healthcheck_path = "/server/health"
 
@@ -54,6 +58,16 @@ locals {
     var.enable_ses_emails_sending ? {
       EMAIL_TRANSPORT  = "ses"
       EMAIL_SES_REGION = data.aws_region.current.name
+    } : {},
+    var.enable_cognito_authentication ? {
+      AUTH_PROVIDERS                         = "cognito"
+      AUTH_COGNITO_DRIVER                    = "openid"
+      AUTH_COGNITO_ISSUER_URL                = local.cognito_issuer_url
+      AUTH_COGNITO_SCOPE                     = join(" ", var.cognito_scopes)
+      AUTH_COGNITO_CLIENT_ID                 = var.cognito_user_pool_client_id
+      AUTH_COGNITO_IDENTIFIER_KEY            = var.cognito_identifier_key
+      AUTH_COGNITO_ALLOW_PUBLIC_REGISTRATION = var.cognito_allow_public_registration ? "true" : "false"
+      AUTH_COGNITO_ICON                      = "aws"
     } : {}
   )
 
@@ -64,16 +78,20 @@ locals {
       cpu       = var.cpu
       memory    = var.memory
       essential = true
-      secrets = concat([
-        { name : "SECRET", valueFrom : aws_secretsmanager_secret_version.directus_secret_version.arn },
-        { name : "ADMIN_PASSWORD", valueFrom : aws_secretsmanager_secret_version.directus_admin_password_version.arn },
-        { name : "DB_PASSWORD", valueFrom : "${var.rds_database_password_secrets_manager_arn}:password::" },
-        { name : "STORAGE_S3_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
-        { name : "STORAGE_S3_SECRET", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
+      secrets = concat(
+        [
+          { name : "SECRET", valueFrom : aws_secretsmanager_secret_version.directus_secret_version.arn },
+          { name : "ADMIN_PASSWORD", valueFrom : aws_secretsmanager_secret_version.directus_admin_password_version.arn },
+          { name : "DB_PASSWORD", valueFrom : "${var.rds_database_password_secrets_manager_arn}:password::" },
+          { name : "STORAGE_S3_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
+          { name : "STORAGE_S3_SECRET", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
         ],
         var.enable_ses_emails_sending ? [
           { name : "EMAIL_SES_CREDENTIALS__ACCESS_KEY_ID", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_id::" },
           { name : "EMAIL_SES_CREDENTIALS__SECRET_ACCESS_KEY", valueFrom : "${aws_secretsmanager_secret_version.directus_serviceuser_secret_version.arn}:access_key_secret::" }
+        ] : [],
+        var.enable_cognito_authentication ? [
+          { name : "AUTH_COGNITO_CLIENT_SECRET", valueFrom : aws_secretsmanager_secret_version.cognito_client_secret_version[0].arn }
       ] : [])
       environment = [for key, value in local.environment_vars : {
         name  = key
@@ -112,6 +130,37 @@ locals {
 data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
+
+data "aws_cognito_user_pool_client" "client" {
+  count = var.enable_cognito_authentication ? 1 : 0
+
+  client_id    = var.cognito_user_pool_client_id
+  user_pool_id = var.cognito_user_pool_id
+}
+
+resource "aws_secretsmanager_secret" "cognito_client_secret" {
+  count = var.enable_cognito_authentication ? 1 : 0
+
+  name_prefix = "${var.application_name}-${local.service_name}-cognito-client-secret"
+
+  kms_key_id = var.kms_key_id
+
+  tags = var.tags
+}
+
+resource "aws_secretsmanager_secret_version" "cognito_client_secret_version" {
+  count = var.enable_cognito_authentication ? 1 : 0
+
+  secret_id     = aws_secretsmanager_secret.cognito_client_secret[0].id
+  secret_string = data.aws_cognito_user_pool_client.client[0].client_secret
+
+  lifecycle {
+    precondition {
+      condition     = contains(data.aws_cognito_user_pool_client.client[0].callback_urls, local.openid_callback_url)
+      error_message = "The Cognito user pool client \"${var.cognito_user_pool_client_id}\" callback URLs must contain \"${local.openid_callback_url}\""
+    }
+  }
+}
 
 resource "aws_s3_bucket" "directus" {
   count = var.create_s3_bucket ? 1 : 0
@@ -236,12 +285,14 @@ module "ecs" {
     "kms" : aws_iam_policy.kms_policy[0].arn
   } : {})
 
-  task_exec_secret_arns = [
+  task_exec_secret_arns = concat([
     aws_secretsmanager_secret.directus_secret.arn,
     aws_secretsmanager_secret.directus_admin_password.arn,
     aws_secretsmanager_secret.directus_serviceuser_secret.arn,
     var.rds_database_password_secrets_manager_arn
-  ]
+    ], var.enable_cognito_authentication ? [
+    aws_secretsmanager_secret.cognito_client_secret[0].arn
+  ] : [])
 
   cluster_configuration = {
     execute_command_configuration = {

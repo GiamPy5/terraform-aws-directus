@@ -79,10 +79,6 @@ Before using this module, ensure you have the following:
 - **Terraform installed** on your machine 🌐
 - Basic knowledge of **AWS services** and **Terraform** 📚
 
-## 📅 Roadmap
-
-- [ ] Implement Amazon Cognito authentication
-
 ## 📚 Module Documentation
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
@@ -136,9 +132,11 @@ Before using this module, ensure you have the following:
 | [aws_s3_bucket.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_s3_bucket_server_side_encryption_configuration.example](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_server_side_encryption_configuration) | resource |
 | [aws_s3_bucket_versioning.directus_bucket_versioning](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning) | resource |
+| [aws_secretsmanager_secret.cognito_client_secret](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.directus_admin_password](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.directus_secret](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.directus_serviceuser_secret](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_version.cognito_client_secret_version](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.directus_admin_password_version](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.directus_secret_version](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.directus_serviceuser_secret_version](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -147,6 +145,7 @@ Before using this module, ensure you have the following:
 | [random_password.directus_admin_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [random_password.directus_secret](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_cognito_user_pool_client.client](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/cognito_user_pool_client) | data source |
 | [aws_iam_policy_document.cloudwatch_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.kms_access_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.kms_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -164,11 +163,17 @@ Before using this module, ensure you have the following:
 | <a name="input_application_name"></a> [application\_name](#input\_application\_name) | The name of the application | `string` | n/a | yes |
 | <a name="input_autoscaling"></a> [autoscaling](#input\_autoscaling) | Autoscaling Configuration | <pre>object({<br>    enable           = bool<br>    memory_threshold = number<br>    cpu_threshold    = number<br>    min_capacity     = number<br>    max_capacity     = number<br>  })</pre> | <pre>{<br>  "cpu_threshold": 60,<br>  "enable": false,<br>  "max_capacity": 3,<br>  "memory_threshold": 80,<br>  "min_capacity": 1<br>}</pre> | no |
 | <a name="input_cloudwatch_logs_stream_prefix"></a> [cloudwatch\_logs\_stream\_prefix](#input\_cloudwatch\_logs\_stream\_prefix) | The prefix of the CloudWatch Logs stream | `string` | `"directus"` | no |
+| <a name="input_cognito_allow_public_registration"></a> [cognito\_allow\_public\_registration](#input\_cognito\_allow\_public\_registration) | Whether to allow public registration in Directus through Cognito External Users | `bool` | `false` | no |
+| <a name="input_cognito_identifier_key"></a> [cognito\_identifier\_key](#input\_cognito\_identifier\_key) | The key of the Cognito identifier | `string` | `"email"` | no |
+| <a name="input_cognito_scopes"></a> [cognito\_scopes](#input\_cognito\_scopes) | The Cognito scopes | `list(string)` | <pre>[<br>  "email",<br>  "openid",<br>  "profile"<br>]</pre> | no |
+| <a name="input_cognito_user_pool_client_id"></a> [cognito\_user\_pool\_client\_id](#input\_cognito\_user\_pool\_client\_id) | The ID of the Cognito user pool client | `string` | `""` | no |
+| <a name="input_cognito_user_pool_id"></a> [cognito\_user\_pool\_id](#input\_cognito\_user\_pool\_id) | The ID of the Cognito user pool | `string` | `""` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of CPU units to reserve for the Directus service | `number` | `2048` | no |
 | <a name="input_create_cloudwatch_logs_group"></a> [create\_cloudwatch\_logs\_group](#input\_create\_cloudwatch\_logs\_group) | Whether to create a CloudWatch Logs group | `bool` | `false` | no |
 | <a name="input_create_s3_bucket"></a> [create\_s3\_bucket](#input\_create\_s3\_bucket) | Whether to create an S3 bucket | `bool` | `false` | no |
 | <a name="input_ecs_service_enable_execute_command"></a> [ecs\_service\_enable\_execute\_command](#input\_ecs\_service\_enable\_execute\_command) | Whether to enable ECS service execute command | `bool` | `false` | no |
 | <a name="input_enable_alb_access_logs"></a> [enable\_alb\_access\_logs](#input\_enable\_alb\_access\_logs) | Whether to enable access logs of the Load Balancer | `bool` | `false` | no |
+| <a name="input_enable_cognito_authentication"></a> [enable\_cognito\_authentication](#input\_enable\_cognito\_authentication) | Whether to enable Cognito authentication | `bool` | `false` | no |
 | <a name="input_enable_ecs_volume"></a> [enable\_ecs\_volume](#input\_enable\_ecs\_volume) | Whether to enable ECS volume | `bool` | `false` | no |
 | <a name="input_enable_kms_encryption"></a> [enable\_kms\_encryption](#input\_enable\_kms\_encryption) | Whether to enable KMS encryption | `bool` | `false` | no |
 | <a name="input_enable_s3_bucket_versioning"></a> [enable\_s3\_bucket\_versioning](#input\_enable\_s3\_bucket\_versioning) | Whether to enable S3 bucket versioning | `bool` | `true` | no |
