@@ -128,6 +128,7 @@ Before using this module, ensure you have the following:
 | [aws_iam_role.ecs_task_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy_attachment.ecs_ebs_role_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_role_policy_attachment.ecs_service_role_ecs_task_execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_iam_role_policy_attachment.ecs_task_role_xray_daemon_write_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_iam_user.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
 | [aws_iam_user_policy.kms_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user_policy) | resource |
 | [aws_lb.directus](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb) | resource |
@@ -173,6 +174,7 @@ Before using this module, ensure you have the following:
 | <a name="input_enable_kms_encryption"></a> [enable\_kms\_encryption](#input\_enable\_kms\_encryption) | Whether to enable KMS encryption | `bool` | `false` | no |
 | <a name="input_enable_s3_bucket_versioning"></a> [enable\_s3\_bucket\_versioning](#input\_enable\_s3\_bucket\_versioning) | Whether to enable S3 bucket versioning | `bool` | `true` | no |
 | <a name="input_enable_ses_emails_sending"></a> [enable\_ses\_emails\_sending](#input\_enable\_ses\_emails\_sending) | Whether to enable sending emails using SES | `bool` | `false` | no |
+| <a name="input_enable_xray_integration"></a> [enable\_xray\_integration](#input\_enable\_xray\_integration) | Whether to enable X-Ray integration | `bool` | `false` | no |
 | <a name="input_force_new_ecs_deployment_on_apply"></a> [force\_new\_ecs\_deployment\_on\_apply](#input\_force\_new\_ecs\_deployment\_on\_apply) | Whether to force a new deployment of the ECS service on apply | `bool` | `false` | no |
 | <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | The tag of the Docker image | `string` | `"latest"` | no |
 | <a name="input_kms_key_id"></a> [kms\_key\_id](#input\_kms\_key\_id) | The ID of the KMS key | `string` | `""` | no |

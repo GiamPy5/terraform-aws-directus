@@ -72,6 +72,12 @@ resource "aws_iam_role_policy_attachment" "ecs_service_role_ecs_task_execution" 
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_task_role_xray_daemon_write_access" {
+  count      = var.enable_xray_integration ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
+}
+
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.application_name}-ecs-task-role"
 
