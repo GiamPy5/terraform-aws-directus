@@ -49,6 +49,11 @@ module "directus" {
   cpu    = 1024
   memory = 2048
 
+  enable_cognito_authentication     = true
+  cognito_allow_public_registration = true
+  cognito_user_pool_id              = "user_pool_id"
+  cognito_user_pool_client_id       = "user_pool_client_id"
+
   ecs_service_enable_execute_command = true # Allows you to connect via CLI to the ECS Task Container (just like `docker exec`). It's disabled by default.
   enable_ses_emails_sending          = true
   enable_ecs_volume                  = false
@@ -72,7 +77,7 @@ module "directus" {
   redis_port = module.elasticache.cluster_cache_nodes[0].port
 
   create_s3_bucket = true # If you do not create an S3 bucket, you will need to provide an existing S3 bucket name
-  s3_bucket_name   = "terraform-aws-directus-${local.region}"
+  s3_bucket_name   = "${local.name}-${local.region}"
 
   enable_kms_encryption = true
   kms_key_id            = aws_kms_key.directus.id
@@ -160,7 +165,7 @@ module "rds" {
   source  = "terraform-aws-modules/rds/aws"
   version = "6.7.0"
 
-  identifier = "directus"
+  identifier = local.name
 
   engine               = "mysql"
   family               = "mysql8.0"
@@ -347,7 +352,7 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
     target_origin_id       = "lb.${local.application_domain_name}"
     viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
-      headers      = []
+      headers      = ["Authorization"]
       query_string = true
       cookies {
         forward = "all"

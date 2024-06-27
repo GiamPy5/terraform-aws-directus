@@ -10,6 +10,41 @@ variable "public_url" {
   default     = ""
 }
 
+variable "enable_cognito_authentication" {
+  description = "Whether to enable Cognito authentication"
+  type        = bool
+  default     = false
+}
+
+variable "cognito_allow_public_registration" {
+  description = "Whether to allow public registration in Directus through Cognito External Users"
+  type        = bool
+  default     = false
+}
+
+variable "cognito_identifier_key" {
+  description = "The key of the Cognito identifier"
+  type        = string
+  default     = "email"
+}
+
+variable "cognito_scopes" {
+  description = "The Cognito scopes"
+  type        = list(string)
+  default     = ["email", "openid", "profile"]
+}
+variable "cognito_user_pool_id" {
+  description = "The ID of the Cognito user pool"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "The ID of the Cognito user pool client"
+  type        = string
+  default     = ""
+}
+
 variable "load_balancer_allowed_cidr_blocks" {
   description = "The CIDR blocks allowed to access the Load Balancer"
   type        = list(string)
