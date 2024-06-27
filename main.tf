@@ -124,7 +124,7 @@ resource "aws_s3_bucket" "directus" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
-  count  = var.create_s3_bucket && var.kms_key_id != "" ? 1 : 0
+  count  = var.create_s3_bucket && var.enable_kms_encryption ? 1 : 0
   bucket = aws_s3_bucket.directus[0].id
 
   rule {
@@ -230,9 +230,11 @@ module "ecs" {
 
   task_exec_iam_role_name = "${local.cluster_name}-task-exec-role"
   task_exec_iam_role_path = "/ecs/${local.cluster_name}/"
-  task_exec_iam_role_policies = {
+  task_exec_iam_role_policies = merge({
     "awslogs" : aws_iam_policy.cloudwatch_logs_policy.arn
-  }
+    }, var.enable_kms_encryption ? {
+    "kms" : aws_iam_policy.kms_policy[0].arn
+  } : {})
 
   task_exec_secret_arns = [
     aws_secretsmanager_secret.directus_secret.arn,
