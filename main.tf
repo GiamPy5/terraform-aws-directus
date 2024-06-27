@@ -230,9 +230,11 @@ module "ecs" {
 
   task_exec_iam_role_name = "${local.cluster_name}-task-exec-role"
   task_exec_iam_role_path = "/ecs/${local.cluster_name}/"
-  task_exec_iam_role_policies = {
+  task_exec_iam_role_policies = merge({
     "awslogs" : aws_iam_policy.cloudwatch_logs_policy.arn
-  }
+    }, var.kms_key_id != "" ? {
+    "kms" : aws_iam_policy.kms_policy.arn
+  } : {})
 
   task_exec_secret_arns = [
     aws_secretsmanager_secret.directus_secret.arn,

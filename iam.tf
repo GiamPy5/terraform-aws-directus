@@ -28,6 +28,28 @@ resource "aws_iam_role_policy_attachment" "ecs_ebs_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
 }
 
+data "aws_iam_policy_document" "kms_policy" {
+  count = var.kms_key_id != "" ? 1 : 0
+
+  statement {
+    sid = "KmsAccess"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [local.kms_key_arn]
+  }
+}
+
+resource "aws_iam_policy" "kms_policy" {
+  count = var.kms_key_id != "" ? 1 : 0
+
+  name   = "${var.application_name}-kms-policy"
+  path   = "/${var.application_name}/"
+  policy = data.aws_iam_policy_document.kms_policy[0].json
+}
+
 resource "aws_iam_role" "ecs_service_role" {
   name = "${var.application_name}-ecs-service-role"
 
