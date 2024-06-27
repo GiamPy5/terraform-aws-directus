@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.2...v0.4.0) (2024-06-27)
+
+
+### Features
+
+* Adds Cognito integration ([#12](https://github.com/GiamPy5/terraform-aws-directus/issues/12)) ([9e9bb51](https://github.com/GiamPy5/terraform-aws-directus/commit/9e9bb51e5526adc8d21c5acc874418df344e33db))
+
 ## [0.3.2](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.1...v0.3.2) (2024-06-27)
 
 
