@@ -269,7 +269,7 @@ resource "aws_secretsmanager_secret_version" "directus_admin_password_version" {
 
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
-  version = "5.11.2"
+  version = "5.11.4"
 
   cluster_name = local.cluster_name
 
