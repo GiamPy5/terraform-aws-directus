@@ -36,10 +36,11 @@ locals {
 module "directus" {
   source = "./.."
 
-  application_name = local.name                # Change this to your application name
-  admin_email      = "fake-email@email.com"    # Change this to your email address
-  vpc_id           = module.vpc.vpc_id         # Change this to your VPC ID
-  subnet_ids       = module.vpc.public_subnets # Change this to your subnet IDs
+  application_name   = local.name                 # Change this to your application name
+  admin_email        = "fake-email@email.com"     # Change this to your email address
+  vpc_id             = module.vpc.vpc_id          # Change this to your VPC ID
+  public_subnet_ids  = module.vpc.public_subnets  # Change this to your subnet IDs
+  private_subnet_ids = module.vpc.private_subnets # Change this to your subnet IDs
 
   public_url = "https://${local.application_domain_name}"
 
