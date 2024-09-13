@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.4.0...v1.0.0) (2024-09-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Remove subnet_ids, adds public subnet IDs and private subnet IDs
+
+* docs: Updates documentation
+
+### Bug Fixes
+
+* Adds public subnet IDs and private subnet IDs ([#15](https://github.com/GiamPy5/terraform-aws-directus/issues/15)) ([a3179d0](https://github.com/GiamPy5/terraform-aws-directus/commit/a3179d0e50b48064bcaac18225e54a2c358c8605))
+
 ## [0.4.0](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.3.2...v0.4.0) (2024-06-27)
 
 
