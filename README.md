@@ -184,6 +184,8 @@ Before using this module, ensure you have the following:
 | <a name="input_load_balancer_allowed_cidr_blocks"></a> [load\_balancer\_allowed\_cidr\_blocks](#input\_load\_balancer\_allowed\_cidr\_blocks) | The CIDR blocks allowed to access the Load Balancer | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
 | <a name="input_load_balancer_prefix_list_ids"></a> [load\_balancer\_prefix\_list\_ids](#input\_load\_balancer\_prefix\_list\_ids) | The prefix list IDs allowed to access the Load Balancer | `list(string)` | `[]` | no |
 | <a name="input_memory"></a> [memory](#input\_memory) | The amount of memory to reserve for the Directus service | `number` | `4096` | no |
+| <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | The IDs of the private subnets used by the ECS service to run tasks | `list(string)` | n/a | yes |
+| <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | The IDs of the public subnets used by the Load Balancer to serve traffic | `list(string)` | n/a | yes |
 | <a name="input_public_url"></a> [public\_url](#input\_public\_url) | The public URL of the Directus service | `string` | `""` | no |
 | <a name="input_rds_database_engine"></a> [rds\_database\_engine](#input\_rds\_database\_engine) | The engine of the RDS database | `string` | n/a | yes |
 | <a name="input_rds_database_host"></a> [rds\_database\_host](#input\_rds\_database\_host) | The host of the RDS database | `string` | n/a | yes |
@@ -197,7 +199,6 @@ Before using this module, ensure you have the following:
 | <a name="input_s3_bucket_name"></a> [s3\_bucket\_name](#input\_s3\_bucket\_name) | The name of the S3 bucket | `string` | `""` | no |
 | <a name="input_s3_bucket_versioning_configuration"></a> [s3\_bucket\_versioning\_configuration](#input\_s3\_bucket\_versioning\_configuration) | S3 bucket versioning configuration | <pre>object({<br>    mfa_delete = string<br>  })</pre> | <pre>{<br>  "mfa_delete": "Disabled"<br>}</pre> | no |
 | <a name="input_ssl_certificate_arn"></a> [ssl\_certificate\_arn](#input\_ssl\_certificate\_arn) | The ARN of the SSL certificate | `string` | `""` | no |
-| <a name="input_subnet_ids"></a> [subnet\_ids](#input\_subnet\_ids) | The IDs of the subnets | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | The tags to apply to the resources | `map(string)` | `{}` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | The ID of the VPC | `string` | n/a | yes |
 

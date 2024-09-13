@@ -381,7 +381,7 @@ resource "aws_lb" "directus" {
   name               = "${local.truncated_application_name}-${local.service_name}-lb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = var.subnet_ids
+  subnets            = var.public_subnet_ids
   security_groups    = [aws_security_group.lb_sg.id]
 
   enable_deletion_protection = false
@@ -470,8 +470,8 @@ resource "aws_ecs_service" "directus" {
   }
 
   network_configuration {
-    assign_public_ip = true
-    subnets          = var.subnet_ids
+    assign_public_ip = false
+    subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs_sg.id]
   }
 
