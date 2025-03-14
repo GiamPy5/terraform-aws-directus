@@ -472,7 +472,7 @@ resource "aws_ecs_service" "directus" {
   network_configuration {
     assign_public_ip = false
     subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.ecs_sg.id]
+    security_groups  = concat([aws_security_group.ecs_sg.id], var.ecs_security_group_ids)
   }
 
   lifecycle {

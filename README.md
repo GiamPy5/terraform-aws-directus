@@ -171,6 +171,7 @@ Before using this module, ensure you have the following:
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of CPU units to reserve for the Directus service | `number` | `2048` | no |
 | <a name="input_create_cloudwatch_logs_group"></a> [create\_cloudwatch\_logs\_group](#input\_create\_cloudwatch\_logs\_group) | Whether to create a CloudWatch Logs group | `bool` | `false` | no |
 | <a name="input_create_s3_bucket"></a> [create\_s3\_bucket](#input\_create\_s3\_bucket) | Whether to create an S3 bucket | `bool` | `false` | no |
+| <a name="input_ecs_security_group_ids"></a> [ecs\_security\_group\_ids](#input\_ecs\_security\_group\_ids) | The IDs of the security groups to attach to the ECS service | `list(string)` | `[]` | no |
 | <a name="input_ecs_service_enable_execute_command"></a> [ecs\_service\_enable\_execute\_command](#input\_ecs\_service\_enable\_execute\_command) | Whether to enable ECS service execute command | `bool` | `false` | no |
 | <a name="input_enable_alb_access_logs"></a> [enable\_alb\_access\_logs](#input\_enable\_alb\_access\_logs) | Whether to enable access logs of the Load Balancer | `bool` | `false` | no |
 | <a name="input_enable_cognito_authentication"></a> [enable\_cognito\_authentication](#input\_enable\_cognito\_authentication) | Whether to enable Cognito authentication | `bool` | `false` | no |
