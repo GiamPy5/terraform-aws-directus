@@ -10,6 +10,12 @@ variable "public_url" {
   default     = ""
 }
 
+variable "ecs_security_group_ids" {
+  description = "The IDs of the security groups to attach to the ECS service"
+  type        = list(string)
+  default     = []
+}
+
 variable "enable_cognito_authentication" {
   description = "Whether to enable Cognito authentication"
   type        = bool
