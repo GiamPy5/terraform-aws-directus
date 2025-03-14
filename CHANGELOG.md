@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1](https://github.com/GiamPy5/terraform-aws-directus/compare/v1.0.0...v1.0.1) (2025-03-14)
+
+
+### Bug Fixes
+
+* adds variable to customize ECS task security group IDs ([#16](https://github.com/GiamPy5/terraform-aws-directus/issues/16)) ([0c32d21](https://github.com/GiamPy5/terraform-aws-directus/commit/0c32d218c1272e4e43719f167be96cb7c7710a6e))
+
 ## [1.0.0](https://github.com/GiamPy5/terraform-aws-directus/compare/v0.4.0...v1.0.0) (2024-09-13)
 
 
