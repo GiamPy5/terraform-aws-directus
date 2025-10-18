@@ -272,3 +272,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "assign_public_ip" {
+  description = "Whether to assign public ip to task"
+  type        = bool
+  default     = false
+}
