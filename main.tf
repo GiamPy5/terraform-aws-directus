@@ -186,7 +186,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "example" {
 
 module "s3_bucket_for_logs" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.1.2"
+  version = "5.10.0"
 
   bucket = "${local.truncated_application_name}-lb-logs-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}"
   acl    = "log-delivery-write"
